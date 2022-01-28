@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="IE=edge" http-equiv="X-UA-Compatible" />
+    <title>Ear Violator 9000</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+  </head>
+  <body>
+    <script>
+      async function async_send(ws, msg, then) {
+        return new Promise((resolve, reject) => {
+          let onmsg = (msg) => (ws.removeEventListener("message", onmsg), resolve(msg));
+          let onerr = (err) => (ws.removeEventListener("error", onerr), reject(err));
+          ws.addEventListener("message", onmsg);
+          ws.addEventListener("error", onerr);
+          ws.send(msg);
+        });
+      }
+      let ws = new WebSocket("ws://irc-ws.chat.twitch.tv:80");
+      ws.addEventListener("message", (msg) => console.log("DEBUG: ", msg.data));
+      ws.onclose = () => console.log("disconnected");
+      ws.onopen = async () => {
+        let res = await async_send(ws, "NICK justinfan37982");
+        if (res.data.startsWith(":tmi.twitch.tv 001")) {
+          ws.send("JOIN #moscowwbish");
+          ws.onmessage = ({ data }) => handle(data);
+          console.log("Connected");
+        } else {
+          console.error("Failed to connect: ", res.data);
+          if (ws.readyState === WebSocket.OPEN) ws.close();
+        }
+      };
+
+      const EAR_VIOLATORS = new Set(["moscowwbish", "compileraddict"]);
+
+      const SOUNDS = {
+        ok: "sounds/ok.mp3",
+      };
+      const SOUND_CACHE = {};
+
+      const RE = /PRIVMSG #(.*) :(.*)/g;
+      function handle(message) {
+        const [user, msg] = RE.exec(message)?.slice(1) ?? [];
+        if (!user || !msg) return;
+
+        if (EAR_VIOLATORS.has(user)) {
+          if (msg.startsWith("!xd ")) {
+            const sound = SOUNDS[msg.substring("!xd ".length)];
+            if (sound) {
+              SOUND_CACHE[sound] ??= new Audio(sound);
+              SOUND_CACHE[sound].play();
+            }
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
