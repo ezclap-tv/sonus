@@ -126,7 +126,9 @@ function handle(commands, message) {
 
 function connect(channel) {
   return new Promise((resolve, reject) => {
-    const url = `${window.location.protocol.startsWith("https") ? "wss" : "ws"}://irc-ws.chat.twitch.tv`;
+    const url = `${
+      window.location.protocol.startsWith("https") ? "wss" : "ws"
+    }://irc-ws.chat.twitch.tv`;
 
     function retry(e) {
       if (e) console.error(e);
@@ -162,19 +164,22 @@ function connect(channel) {
 const input = document.getElementById("channel");
 /** @type {HTMLButtonElement} */
 const submit = document.getElementById("submit");
+const DEFAULT_CHANNEL = new Store("default_channel", "");
 
 input.onkeyup = ({ code }) => code === "Enter" && submit.click();
 submit.onclick = () => {
+  DEFAULT_CHANNEL.set(input.value);
   window.location.hash = input.value;
   window.location.reload();
 };
 
+window.location.hash = DEFAULT_CHANNEL.get();
 const CHANNEL = window.location.hash.substring(1);
 if (CHANNEL) {
   const player = new Player(/*[SOUNDS]*/);
 
   const violatee = CHANNEL;
-  const violators = new Store(`violators.${violatee}`, unique([violatee, "moscowwbish"]));
+  const violators = new Store(`violators.${violatee}`, unique([violatee]));
   /**
    * @type {Record<string, {
    *  allows: (user: string) => boolean,
@@ -238,7 +243,9 @@ if (CHANNEL) {
     for (const cmd of Object.keys(commands)) {
       const row = tbody.insertRow();
       const commandCell = row.insertCell();
-      commandCell.appendChild(document.createTextNode(`!xd ${cmd} ${commands[cmd].args.join(" ")}`));
+      commandCell.appendChild(
+        document.createTextNode(`!xd ${cmd} ${commands[cmd].args.join(" ")}`)
+      );
       const descriptionCell = row.insertCell();
       descriptionCell.appendChild(document.createTextNode(commands[cmd].description));
     }
