@@ -17,43 +17,130 @@
           ws.send(msg);
         });
       }
-      let ws = new WebSocket(`${window.location.protocol.startsWith("https") ? "wss" : "ws"}://irc-ws.chat.twitch.tv`);
-      ws.addEventListener("message", (msg) => console.log("DEBUG: ", msg.data));
-      ws.onclose = () => console.log("disconnected");
-      ws.onopen = async () => {
-        let res = await async_send(ws, "NICK justinfan37982");
-        if (res.data.startsWith(":tmi.twitch.tv 001")) {
-          ws.send("JOIN #moscowwbish");
-          ws.onmessage = ({ data }) => handle(data);
-          console.log("Connected");
-        } else {
-          console.error("Failed to connect: ", res.data);
-          if (ws.readyState === WebSocket.OPEN) ws.close();
+
+      class Store {
+        #key;
+        #data;
+        constructor(key, initial) {
+          this.#key = key;
+          this.#data = JSON.parse(localStorage.getItem(key)) ?? initial;
         }
-      };
 
-      const EAR_VIOLATORS = new Set(["moscowwbish", "compileraddict"]);
+        set(data) {
+          this.#data = data;
+          localStorage.setItem(this.#key, JSON.stringify(data));
+        }
 
+        get() {
+          return this.#data;
+        }
+      }
+
+      const VIOLATORS = new Store("violators", ["moscowwbish", "compileraddict"]);
       const SOUNDS = {
         ok: "sounds/ok.mp3",
       };
-      const SOUND_CACHE = {};
+      /** @type {Map<string, HTMLAudioElement} */
+      const CACHE = new Map();
 
-      const RE = /PRIVMSG #(.*) :(.*)/g;
+      const PREFIX = "!xd";
+      const COMMANDS = {
+        $add: {
+          allows: (user) => user === "moscowwbish",
+          handle(user, args) {
+            const target = args.join().trim().toLowerCase();
+            console.log(`${user} added ${target} as violator`);
+            VIOLATORS.set([...new Set([...VIOLATORS.get(), target])]);
+          },
+        },
+        $rm: {
+          allows: (user) => user === "moscowwbish",
+          handle(user, args) {
+            const target = args.join().trim().toLowerCase();
+            console.log(`${user} removed ${target} as violator`);
+            VIOLATORS.set(VIOLATORS.get().filter((u) => u !== target));
+          },
+        },
+        $play: {
+          allows: (user) => VIOLATORS.get().includes(user),
+          handle(user, args) {
+            const sound = SOUNDS[args.join()];
+            if (!CACHE.has(sound)) CACHE.set(sound, new Audio(sound));
+            console.log(`${user} played ${sound}`);
+            CACHE.get(sound).play();
+          },
+        },
+      };
+
+      const RE = /:(.*)!.*PRIVMSG.*:(.*)[\r\n]*/g;
       function handle(message) {
-        const [user, msg] = RE.exec(message)?.slice(1) ?? [];
+        const [user, msg] = [...message.matchAll(RE)]?.[0]?.slice(1) ?? [];
         if (!user || !msg) return;
 
-        if (EAR_VIOLATORS.has(user)) {
-          if (msg.startsWith("!xd ")) {
-            const sound = SOUNDS[msg.substring("!xd ".length)];
-            if (sound) {
-              SOUND_CACHE[sound] ??= new Audio(sound);
-              SOUND_CACHE[sound].play();
+        const [prefix, cmd, ...args] = msg.split(" ");
+        if (!prefix || !cmd) return;
+        if (prefix !== PREFIX) return;
+        if (!COMMANDS[cmd].allows(user)) return;
+        COMMANDS[cmd].handle(user, args);
+      }
+
+      function connect() {
+        return new Promise((resolve, reject) => {
+          const url = `${window.location.protocol.startsWith("https") ? "wss" : "ws"}://irc-ws.chat.twitch.tv`;
+
+          function retry(e) {
+            if (e) console.error(e);
+            console.warn("Failed to connect, retrying...");
+            ws = new WebSocket(url);
+            ws.onerror = retry;
+            ws.onclose = retry;
+            ws.onopen = onopen;
+          }
+          async function onopen() {
+            await async_send(ws, "CAP REQ :twitch.tv/membership");
+            let res = await async_send(ws, "NICK justinfan37982");
+            if (res.data.startsWith(":tmi.twitch.tv 001")) {
+              ws.send("JOIN #moscowwbish");
+              ws.onerror = function () {};
+              ws.onclose = function () {};
+              ws.onopen = function () {};
+              resolve(ws);
+            } else {
+              if (ws.readyState === WebSocket.OPEN) ws.close();
+              reject(new Error("Failed to join"));
             }
           }
-        }
+
+          let ws = new WebSocket(url);
+          ws.onerror = retry;
+          ws.onclose = retry;
+          ws.onopen = onopen;
+        });
       }
+
+      (async () => {
+        async function onclose() {
+          console.log("Disconnected, reconnecting...");
+          ws = await connect();
+          ws.onclose = onclose;
+          ws.onmessage = onmessage;
+        }
+
+        function onmessage({ data }) {
+          if (data.includes("PING")) return ws.send("PONG :tmi.twitch.tv");
+          handle(data);
+        }
+
+        let ws = await connect();
+        ws.onclose = onclose;
+        ws.onmessage = onmessage;
+
+        console.log("Connected");
+        console.log("prefix", PREFIX);
+        console.log("commands", Object.keys(COMMANDS));
+        console.log("violators", VIOLATORS.get());
+        console.log("sounds", SOUNDS);
+      })();
     </script>
   </body>
 </html>
