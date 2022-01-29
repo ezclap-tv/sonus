@@ -58,57 +58,23 @@
   </head>
   <body>
     <div>
-      <table>
-        <thead>
-          <tr>
-            <th>Chief Violator (Stream)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>
-              <input
-                id="chief-violator-input"
-                type="text"
-                onkeydown="updateChiefViolator(this)"
-              />
-              <button onclick="updateChiefViolator()">Update</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div>
-      <table>
+      <table id="commands">
         <thead>
           <tr>
             <th>Command</th>
             <th>Description</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td><b>!xd $add username</b></td>
-            <td>Add `username` as a new violator</td>
-          </tr>
-          <tr>
-            <td><b>!xd $rm username</b></td>
-            <td>Remove `username` from the violators</td>
-          </tr>
-          <tr>
-            <td><b>!xd name</b></td>
-            <td>Play the sound `name` on stream</td>
-          </tr>
-        </tbody>
+        <tbody></tbody>
       </table>
     </div>
     <div>
       <table id="sounds">
         <thead>
           <tr>
-            <th>#</th>
             <th>Sound</th>
             <th>Command (click to copy)</th>
+            <th>Play</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -143,8 +109,8 @@
         }
       }
 
-      const CHIEF_VIOLATOR = new Store("chiefViolator", "moscowwbish");
-      const VIOLATORS = new Store("violators", ["moscowwbish", "compileraddict"]);
+      const CHIEF_VIOLATOR = window.location.hash.substring(1);
+      const VIOLATORS = new Store(`violators.${CHIEF_VIOLATOR}`, [CHIEF_VIOLATOR]);
       const SOUNDS = {
         ok: "ok.mp3",
         a: "a.ogg",
@@ -274,82 +240,142 @@
         zomlol: "zomlol.ogg",
       };
 
-      (function generateSoundTable() {
-        const violatorInput = document.getElementById("chief-violator-input");
-        violatorInput.value = CHIEF_VIOLATOR.get();
+      class Player {
+        /** @type {string | null} */
+        playing = null;
+        /** @type {Map<string, HTMLAudioElement} */
+        cache = new Map();
+        callbacks = {
+          /** @type {Set<(name: string) => void>} */
+          play: new Set(),
+          /** @type {Set<(name: string) => void>} */
+          stop: new Set(),
+        };
 
-        const tbody = document.getElementById("sounds").getElementsByTagName("tbody")[0];
+        /**
+         * @param {"play" | "stop"} event
+         * @param {(name: string) => void} callback
+         */
+        on(event, callback) {
+          if (!(event in this.callbacks)) return;
+          this.callbacks[event].add(callback);
+        }
 
-        let sounds = Object.keys(SOUNDS);
-        for (const i in sounds) {
-          const sound = sounds[i];
-          const row = tbody.insertRow();
-          const numberCell = row.insertCell();
-          numberCell.appendChild(document.createTextNode(i));
+        /**
+         * @param {"play" | "stop"} event
+         * @param {(name: string) => void} callback
+         */
+        off(event, callback) {
+          if (!(event in this.callbacks)) return;
+          this.callbacks[event].delete(callback);
+        }
 
-          const soundCell = row.insertCell();
-          soundCell.appendChild(document.createTextNode(sound));
+        /**
+         * @param {string} name
+         * @returns {HTMLAudioElement | null}
+         */
+        get(name) {
+          if (!(name in SOUNDS)) return null;
+          const sound = "sounds/" + SOUNDS[name];
+          if (!this.cache.has(sound)) this.cache.set(sound, new Audio(sound));
+          return this.cache.get(sound);
+        }
 
-          const commandCell = row.insertCell();
-          const copyButton = document.createElement("button");
-          commandCell.appendChild(copyButton);
+        /** @param {string} name */
+        async play(name) {
+          if (this.playing) this.stop();
+          const file = this.get(name);
 
-          copyButton.textContent = `!xd ${sound}`;
-          copyButton.onclick = () => {
-            navigator.clipboard.writeText(copyButton.textContent).then(
-              function () {
-                copyButton.textContent = "Copied!";
+          this.callbacks.play.forEach((c) => c(name));
+          this.playing = name;
+          return new Promise((done) => {
+            file.play().then(() => {
+              const ondone = () => {
+                if (this.playing === name) {
+                  this.callbacks.stop.forEach((c) => c(this.playing));
+                  this.playing = null;
+                }
+                file.removeEventListener("ended", ondone);
+                file.removeEventListener("pause", ondone);
+                done();
+              };
+              file.addEventListener("ended", ondone, { once: true });
+              file.addEventListener("pause", ondone, { once: true });
+            });
+          });
+          return file.play().then(
+            () =>
+              new Promise((done) =>
                 setTimeout(() => {
-                  copyButton.textContent = `!xd ${sound}`;
-                }, 1000);
-              },
-              function (err) {
-                console.error("Async: Could not copy text: ", err);
-              }
-            );
-          };
-        }
-      })();
-      function updateChiefViolator(element) {
-        if (element && event && event.key != "Enter") {
-          return;
+                  if (this.playing) {
+                    this.callbacks.stop.forEach((c) => c(this.playing));
+                    this.playing = null;
+                  }
+                  done();
+                }, file.duration * 1000)
+              )
+          );
         }
 
-        const node = document.getElementById("chief-violator-input");
-        console.log("Chief violator changed to ", node.value);
-        CHIEF_VIOLATOR.set(node.value);
-        window.location.reload();
+        stop() {
+          if (!this.playing) return;
+          const file = this.get(this.playing);
+          file.pause();
+          file.currentTime = 0;
+          this.callbacks.stop.forEach((c) => c(this.playing));
+          this.playing = null;
+        }
       }
-
-      /** @type {Map<string, HTMLAudioElement} */
-      const CACHE = new Map();
+      const PLAYER = new Player();
 
       const PREFIX = "!xd";
+      /**
+       * @type {Record<string, {
+       *  allows: (user: string) => boolean,
+       *  handle: (user: string, args: string[]) => void,
+       *  args: string[],
+       *  description: string,
+       * }>}
+       */
       const COMMANDS = {
+        $play: {
+          allows: (user) => !PLAYER.playing && VIOLATORS.get().includes(user),
+          handle(user, args) {
+            const sound = args.join();
+            console.log(`${user} played ${sound}`);
+            PLAYER.play(sound);
+          },
+          args: ["sound"],
+          description: "Play the sound `sound`",
+        },
+        $stop: {
+          allows: (user) => PLAYER.playing && VIOLATORS.get().includes(user),
+          handle(user, args) {
+            console.log(`${user} stopped ${PLAYER.playing}`);
+            PLAYER.stop();
+          },
+          args: [],
+          description: "Stop playing the current sound",
+        },
         $add: {
-          allows: (user) => user === CHIEF_VIOLATOR.get(),
+          allows: (user) => user === CHIEF_VIOLATOR,
           handle(user, args) {
             const target = args.join().trim().toLowerCase();
             console.log(`${user} added ${target} as violator`);
             VIOLATORS.set([...new Set([...VIOLATORS.get(), target])]);
           },
+          args: ["username"],
+          description: "Add `username` to the violators list",
         },
         $rm: {
-          allows: (user) => user === CHIEF_VIOLATOR.get(),
+          allows: (user) => user === CHIEF_VIOLATOR,
           handle(user, args) {
             const target = args.join().trim().toLowerCase();
             console.log(`${user} removed ${target} as violator`);
             VIOLATORS.set(VIOLATORS.get().filter((u) => u !== target));
           },
-        },
-        $play: {
-          allows: (user) => VIOLATORS.get().includes(user),
-          handle(user, args) {
-            const sound = "sounds/" + SOUNDS[args.join()];
-            if (!CACHE.has(sound)) CACHE.set(sound, new Audio(sound));
-            console.log(`${user} played ${sound}`);
-            CACHE.get(sound).play();
-          },
+          args: ["username"],
+          description: "Remove `username` from the violators list",
         },
       };
 
@@ -358,22 +384,16 @@
         const [user, msg] = [...message.matchAll(RE)]?.[0]?.slice(1) ?? [];
         if (!user || !msg) return;
 
-        const [prefix, cmd, ...args] = msg.split(" ");
+        const [prefix, cname, ...args] = msg.split(" ");
         if (prefix !== PREFIX) return;
-        if (!cmd.startsWith("$")) {
-          if (!COMMANDS.$play.allows(user)) return;
-          COMMANDS.$play.handle(user, [cmd].concat(args));
-        } else {
-          if (!COMMANDS[cmd].allows(user)) return;
-          COMMANDS[cmd].handle(user, args);
-        }
+        const cmd = cname.startsWith("$") ? COMMANDS[cname] : COMMANDS.$play;
+        if (!cmd.allows(user)) return;
+        cmd.handle(user, cname.startsWith("$") ? args : [cname].concat(args));
       }
 
       function connect() {
         return new Promise((resolve, reject) => {
-          const url = `${
-            window.location.protocol.startsWith("https") ? "wss" : "ws"
-          }://irc-ws.chat.twitch.tv`;
+          const url = `${window.location.protocol.startsWith("https") ? "wss" : "ws"}://irc-ws.chat.twitch.tv`;
 
           function retry(e) {
             if (e) console.error(e);
@@ -387,7 +407,7 @@
             await async_send(ws, "CAP REQ :twitch.tv/membership");
             let res = await async_send(ws, "NICK justinfan37982");
             if (res.data.startsWith(":tmi.twitch.tv 001")) {
-              ws.send(`JOIN #${CHIEF_VIOLATOR.get()}`);
+              ws.send(`JOIN #${CHIEF_VIOLATOR}`);
               ws.onerror = function () {};
               ws.onclose = function () {};
               ws.onopen = function () {};
@@ -425,9 +445,64 @@
         console.log("Connected");
         console.log("prefix", PREFIX);
         console.log("commands", Object.keys(COMMANDS));
-        console.log("chief", CHIEF_VIOLATOR.get());
+        console.log("chief", CHIEF_VIOLATOR);
         console.log("violators", VIOLATORS.get());
         console.log("sounds", SOUNDS);
+      })();
+
+      (function generateSoundTable() {
+        const tbody = document.getElementById("sounds").getElementsByTagName("tbody")[0];
+
+        for (const sound of Object.keys(SOUNDS)) {
+          const row = tbody.insertRow();
+          const soundCell = row.insertCell();
+          soundCell.appendChild(document.createTextNode(sound));
+
+          const commandCell = row.insertCell();
+          const copyButton = document.createElement("button");
+          commandCell.appendChild(copyButton);
+          copyButton.textContent = `!xd ${sound}`;
+          copyButton.onclick = async () => {
+            await navigator.clipboard.writeText(copyButton.textContent);
+            copyButton.textContent = "Copied!";
+            setTimeout(() => (copyButton.textContent = `!xd ${sound}`), 1000);
+          };
+
+          const playCell = row.insertCell();
+          const playButton = document.createElement("button");
+          const _stop = () => PLAYER.stop();
+          const _play = () => PLAYER.play(sound);
+          PLAYER.on("play", (name) => {
+            if (name !== sound) return;
+            playButton.textContent = `⏹ ${sound}`;
+            playButton.onclick = _stop;
+          });
+          PLAYER.on("stop", (name) => {
+            playButton.textContent = `▶️ ${sound}`;
+            playButton.onclick = _play;
+          });
+          playButton.textContent = `▶️ ${sound}`;
+          playButton.onclick = _play;
+          playCell.appendChild(playButton);
+        }
+      })();
+
+      (function generateCommandTable() {
+        const tbody = document.getElementById("commands").getElementsByTagName("tbody")[0];
+
+        const row = tbody.insertRow();
+        const commandCell = row.insertCell();
+        commandCell.appendChild(document.createTextNode("!xd sound"));
+        const descriptionCell = row.insertCell();
+        descriptionCell.appendChild(document.createTextNode("Play the sound `sound`"));
+
+        for (const cmd of Object.keys(COMMANDS)) {
+          const row = tbody.insertRow();
+          const commandCell = row.insertCell();
+          commandCell.appendChild(document.createTextNode(`!xd ${cmd} ${COMMANDS[cmd].args.join(" ")}`));
+          const descriptionCell = row.insertCell();
+          descriptionCell.appendChild(document.createTextNode(COMMANDS[cmd].description));
+        }
       })();
     </script>
   </body>
