@@ -5,8 +5,115 @@
     <meta content="IE=edge" http-equiv="X-UA-Compatible" />
     <title>Ear Violator 9000</title>
     <meta content="width=device-width, initial-scale=1" name="viewport" />
+
+    <style>
+      table {
+        font-family: Arial, Helvetica, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 10px;
+        table-layout: fixed;
+      }
+
+      td,
+      th {
+        border: 1px solid #ddd;
+        padding: 8px;
+      }
+
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+
+      th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: left;
+        background-color: #04aa6d;
+        color: white;
+      }
+
+      input {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+
+      button {
+        font-family: monospace;
+        background-color: #4caf50; /* Green */
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #3e8e41;
+      }
+    </style>
   </head>
   <body>
+    <div>
+      <table>
+        <thead>
+          <tr>
+            <th>Chief Violator (Stream)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <input
+                id="chief-violator-input"
+                type="text"
+                onkeydown="updateChiefViolator(this)"
+              />
+              <button onclick="updateChiefViolator()">Update</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <table>
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>!xd $add username</b></td>
+            <td>Add `username` as a new violator</td>
+          </tr>
+          <tr>
+            <td><b>!xd $rm username</b></td>
+            <td>Remove `username` from the violators</td>
+          </tr>
+          <tr>
+            <td><b>!xd name</b></td>
+            <td>Play the sound `name` on stream</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <table id="sounds">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Sound</th>
+            <th>Command (click to copy)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <script>
       async function async_send(ws, msg, then) {
         return new Promise((resolve, reject) => {
@@ -36,6 +143,7 @@
         }
       }
 
+      const CHIEF_VIOLATOR = new Store("chiefViolator", "moscowwbish");
       const VIOLATORS = new Store("violators", ["moscowwbish", "compileraddict"]);
       const SOUNDS = {
         ok: "ok.mp3",
@@ -165,13 +273,61 @@
         yubi: "yubi.ogg",
         zomlol: "zomlol.ogg",
       };
+
+      (function generateSoundTable() {
+        const violatorInput = document.getElementById("chief-violator-input");
+        violatorInput.value = CHIEF_VIOLATOR.get();
+
+        const tbody = document.getElementById("sounds").getElementsByTagName("tbody")[0];
+
+        let sounds = Object.keys(SOUNDS);
+        for (const i in sounds) {
+          const sound = sounds[i];
+          const row = tbody.insertRow();
+          const numberCell = row.insertCell();
+          numberCell.appendChild(document.createTextNode(i));
+
+          const soundCell = row.insertCell();
+          soundCell.appendChild(document.createTextNode(sound));
+
+          const commandCell = row.insertCell();
+          const copyButton = document.createElement("button");
+          commandCell.appendChild(copyButton);
+
+          copyButton.textContent = `!xd ${sound}`;
+          copyButton.onclick = () => {
+            navigator.clipboard.writeText(copyButton.textContent).then(
+              function () {
+                copyButton.textContent = "Copied!";
+                setTimeout(() => {
+                  copyButton.textContent = `!xd ${sound}`;
+                }, 1000);
+              },
+              function (err) {
+                console.error("Async: Could not copy text: ", err);
+              }
+            );
+          };
+        }
+      })();
+      function updateChiefViolator(element) {
+        if (element && event && event.key != "Enter") {
+          return;
+        }
+
+        const node = document.getElementById("chief-violator-input");
+        console.log("Chief violator changed to ", node.value);
+        CHIEF_VIOLATOR.set(node.value);
+        window.location.reload();
+      }
+
       /** @type {Map<string, HTMLAudioElement} */
       const CACHE = new Map();
 
       const PREFIX = "!xd";
       const COMMANDS = {
         $add: {
-          allows: (user) => user === "moscowwbish",
+          allows: (user) => user === CHIEF_VIOLATOR.get(),
           handle(user, args) {
             const target = args.join().trim().toLowerCase();
             console.log(`${user} added ${target} as violator`);
@@ -179,7 +335,7 @@
           },
         },
         $rm: {
-          allows: (user) => user === "moscowwbish",
+          allows: (user) => user === CHIEF_VIOLATOR.get(),
           handle(user, args) {
             const target = args.join().trim().toLowerCase();
             console.log(`${user} removed ${target} as violator`);
@@ -215,7 +371,9 @@
 
       function connect() {
         return new Promise((resolve, reject) => {
-          const url = `${window.location.protocol.startsWith("https") ? "wss" : "ws"}://irc-ws.chat.twitch.tv`;
+          const url = `${
+            window.location.protocol.startsWith("https") ? "wss" : "ws"
+          }://irc-ws.chat.twitch.tv`;
 
           function retry(e) {
             if (e) console.error(e);
@@ -229,7 +387,7 @@
             await async_send(ws, "CAP REQ :twitch.tv/membership");
             let res = await async_send(ws, "NICK justinfan37982");
             if (res.data.startsWith(":tmi.twitch.tv 001")) {
-              ws.send("JOIN #moscowwbish");
+              ws.send(`JOIN #${CHIEF_VIOLATOR.get()}`);
               ws.onerror = function () {};
               ws.onclose = function () {};
               ws.onopen = function () {};
@@ -267,6 +425,7 @@
         console.log("Connected");
         console.log("prefix", PREFIX);
         console.log("commands", Object.keys(COMMANDS));
+        console.log("chief", CHIEF_VIOLATOR.get());
         console.log("violators", VIOLATORS.get());
         console.log("sounds", SOUNDS);
       })();
