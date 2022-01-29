@@ -13,7 +13,7 @@ jobs:
         with:
           node-version: "16.x"
       - run: node build.js
-      - uses: JamesIves/github-pages-deploy-action@4.2.2
+      - uses: JamesIves/github-pages-deploy-action@4.1.7
         with:
           single-commit: true
           branch: gh-pages
