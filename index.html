@@ -7,6 +7,18 @@
     <meta content="width=device-width, initial-scale=1" name="viewport" />
 
     <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      div {
+        padding: 1em;
+      }
+
       table {
         font-family: Arial, Helvetica, sans-serif;
         border-collapse: collapse;
@@ -34,8 +46,9 @@
       }
 
       input {
-        padding: 12px 16px;
+        padding: 0.5em 1em;
         font-size: 16px;
+        border: solid 1px;
       }
 
       button {
@@ -43,7 +56,7 @@
         background-color: #4caf50; /* Green */
         border: none;
         color: white;
-        padding: 15px 32px;
+        padding: 0.5em 1em;
         text-align: center;
         text-decoration: none;
         display: inline-block;
@@ -57,6 +70,10 @@
     </style>
   </head>
   <body>
+    <div>
+      <input type="text" id="channel" placeholder="...channel" />
+      <button type="button" id="submit">Submit</button>
+    </div>
     <div>
       <table id="commands">
         <thead>
@@ -80,304 +97,6 @@
         <tbody></tbody>
       </table>
     </div>
-    <script>
-      /*[SOUNDS]*/
-
-      async function async_send(ws, msg, then) {
-        return new Promise((resolve, reject) => {
-          let onmsg = (msg) => (ws.removeEventListener("message", onmsg), resolve(msg));
-          let onerr = (err) => (ws.removeEventListener("error", onerr), reject(err));
-          ws.addEventListener("message", onmsg);
-          ws.addEventListener("error", onerr);
-          ws.send(msg);
-        });
-      }
-
-      class Store {
-        #key;
-        #data;
-        constructor(key, initial) {
-          this.#key = key;
-          this.#data = JSON.parse(localStorage.getItem(key)) ?? initial;
-        }
-
-        set(data) {
-          this.#data = data;
-          localStorage.setItem(this.#key, JSON.stringify(data));
-        }
-
-        get() {
-          return this.#data;
-        }
-      }
-
-      const CHIEF_VIOLATOR = window.location.hash.substring(1);
-      const VIOLATORS = new Store(`violators.${CHIEF_VIOLATOR}`, [CHIEF_VIOLATOR]);
-
-      class Player {
-        /** @type {string | null} */
-        playing = null;
-        /** @type {Map<string, HTMLAudioElement} */
-        cache = new Map();
-        callbacks = {
-          /** @type {Set<(name: string) => void>} */
-          play: new Set(),
-          /** @type {Set<(name: string) => void>} */
-          stop: new Set(),
-        };
-
-        /**
-         * @param {"play" | "stop"} event
-         * @param {(name: string) => void} callback
-         */
-        on(event, callback) {
-          if (!(event in this.callbacks)) return;
-          this.callbacks[event].add(callback);
-        }
-
-        /**
-         * @param {"play" | "stop"} event
-         * @param {(name: string) => void} callback
-         */
-        off(event, callback) {
-          if (!(event in this.callbacks)) return;
-          this.callbacks[event].delete(callback);
-        }
-
-        /**
-         * @param {string} name
-         * @returns {HTMLAudioElement | null}
-         */
-        get(name) {
-          if (!(name in SOUNDS)) return null;
-          const sound = "sounds/" + SOUNDS[name];
-          if (!this.cache.has(sound)) this.cache.set(sound, new Audio(sound));
-          return this.cache.get(sound);
-        }
-
-        /** @param {string} name */
-        async play(name) {
-          if (this.playing) this.stop();
-          const file = this.get(name);
-
-          this.callbacks.play.forEach((c) => c(name));
-          this.playing = name;
-          return new Promise((done) => {
-            file.play().then(() => {
-              const ondone = () => {
-                if (this.playing === name) {
-                  this.callbacks.stop.forEach((c) => c(this.playing));
-                  this.playing = null;
-                }
-                file.removeEventListener("ended", ondone);
-                file.removeEventListener("pause", ondone);
-                done();
-              };
-              file.addEventListener("ended", ondone, { once: true });
-              file.addEventListener("pause", ondone, { once: true });
-            });
-          });
-          return file.play().then(
-            () =>
-              new Promise((done) =>
-                setTimeout(() => {
-                  if (this.playing) {
-                    this.callbacks.stop.forEach((c) => c(this.playing));
-                    this.playing = null;
-                  }
-                  done();
-                }, file.duration * 1000)
-              )
-          );
-        }
-
-        stop() {
-          if (!this.playing) return;
-          const file = this.get(this.playing);
-          file.pause();
-          file.currentTime = 0;
-          this.callbacks.stop.forEach((c) => c(this.playing));
-          this.playing = null;
-        }
-      }
-      const PLAYER = new Player();
-
-      const PREFIX = "!xd";
-      /**
-       * @type {Record<string, {
-       *  allows: (user: string) => boolean,
-       *  handle: (user: string, args: string[]) => void,
-       *  args: string[],
-       *  description: string,
-       * }>}
-       */
-      const COMMANDS = {
-        $play: {
-          allows: (user) => !PLAYER.playing && VIOLATORS.get().includes(user),
-          handle(user, args) {
-            const sound = args.join();
-            console.log(`${user} played ${sound}`);
-            PLAYER.play(sound);
-          },
-          args: ["sound"],
-          description: "Play the sound `sound`",
-        },
-        $stop: {
-          allows: (user) => PLAYER.playing && VIOLATORS.get().includes(user),
-          handle(user, args) {
-            console.log(`${user} stopped ${PLAYER.playing}`);
-            PLAYER.stop();
-          },
-          args: [],
-          description: "Stop playing the current sound",
-        },
-        $add: {
-          allows: (user) => user === CHIEF_VIOLATOR,
-          handle(user, args) {
-            const target = args.join().trim().toLowerCase();
-            console.log(`${user} added ${target} as violator`);
-            VIOLATORS.set([...new Set([...VIOLATORS.get(), target])]);
-          },
-          args: ["username"],
-          description: "Add `username` to the violators list",
-        },
-        $rm: {
-          allows: (user) => user === CHIEF_VIOLATOR,
-          handle(user, args) {
-            const target = args.join().trim().toLowerCase();
-            console.log(`${user} removed ${target} as violator`);
-            VIOLATORS.set(VIOLATORS.get().filter((u) => u !== target));
-          },
-          args: ["username"],
-          description: "Remove `username` from the violators list",
-        },
-      };
-
-      const RE = /:(.*)!.*PRIVMSG.*:(.*)[\r\n]*/g;
-      function handle(message) {
-        const [user, msg] = [...message.matchAll(RE)]?.[0]?.slice(1) ?? [];
-        if (!user || !msg) return;
-
-        const [prefix, cname, ...args] = msg.split(" ");
-        if (prefix !== PREFIX) return;
-        const cmd = cname.startsWith("$") ? COMMANDS[cname] : COMMANDS.$play;
-        if (!cmd.allows(user)) return;
-        cmd.handle(user, cname.startsWith("$") ? args : [cname].concat(args));
-      }
-
-      function connect() {
-        return new Promise((resolve, reject) => {
-          const url = `${window.location.protocol.startsWith("https") ? "wss" : "ws"}://irc-ws.chat.twitch.tv`;
-
-          function retry(e) {
-            if (e) console.error(e);
-            console.warn("Failed to connect, retrying...");
-            ws = new WebSocket(url);
-            ws.onerror = retry;
-            ws.onclose = retry;
-            ws.onopen = onopen;
-          }
-          async function onopen() {
-            await async_send(ws, "CAP REQ :twitch.tv/membership");
-            let res = await async_send(ws, "NICK justinfan37982");
-            if (res.data.startsWith(":tmi.twitch.tv 001")) {
-              ws.send(`JOIN #${CHIEF_VIOLATOR}`);
-              ws.onerror = function () {};
-              ws.onclose = function () {};
-              ws.onopen = function () {};
-              resolve(ws);
-            } else {
-              if (ws.readyState === WebSocket.OPEN) ws.close();
-              reject(new Error("Failed to join"));
-            }
-          }
-
-          let ws = new WebSocket(url);
-          ws.onerror = retry;
-          ws.onclose = retry;
-          ws.onopen = onopen;
-        });
-      }
-
-      (async () => {
-        async function onclose() {
-          console.log("Disconnected, reconnecting...");
-          ws = await connect();
-          ws.onclose = onclose;
-          ws.onmessage = onmessage;
-        }
-
-        function onmessage({ data }) {
-          if (data.includes("PING")) return ws.send("PONG :tmi.twitch.tv");
-          handle(data);
-        }
-
-        let ws = await connect();
-        ws.onclose = onclose;
-        ws.onmessage = onmessage;
-
-        console.log("Connected");
-        console.log("prefix", PREFIX);
-        console.log("commands", Object.keys(COMMANDS));
-        console.log("chief", CHIEF_VIOLATOR);
-        console.log("violators", VIOLATORS.get());
-        console.log("sounds", SOUNDS);
-      })();
-
-      (function generateSoundTable() {
-        const tbody = document.getElementById("sounds").getElementsByTagName("tbody")[0];
-
-        for (const sound of Object.keys(SOUNDS)) {
-          const row = tbody.insertRow();
-          const soundCell = row.insertCell();
-          soundCell.appendChild(document.createTextNode(sound));
-
-          const commandCell = row.insertCell();
-          const copyButton = document.createElement("button");
-          commandCell.appendChild(copyButton);
-          copyButton.textContent = `!xd ${sound}`;
-          copyButton.onclick = async () => {
-            await navigator.clipboard.writeText(copyButton.textContent);
-            copyButton.textContent = "Copied!";
-            setTimeout(() => (copyButton.textContent = `!xd ${sound}`), 1000);
-          };
-
-          const playCell = row.insertCell();
-          const playButton = document.createElement("button");
-          const _stop = () => PLAYER.stop();
-          const _play = () => PLAYER.play(sound);
-          PLAYER.on("play", (name) => {
-            if (name !== sound) return;
-            playButton.textContent = `⏹ ${sound}`;
-            playButton.onclick = _stop;
-          });
-          PLAYER.on("stop", (name) => {
-            playButton.textContent = `▶️ ${sound}`;
-            playButton.onclick = _play;
-          });
-          playButton.textContent = `▶️ ${sound}`;
-          playButton.onclick = _play;
-          playCell.appendChild(playButton);
-        }
-      })();
-
-      (function generateCommandTable() {
-        const tbody = document.getElementById("commands").getElementsByTagName("tbody")[0];
-
-        const row = tbody.insertRow();
-        const commandCell = row.insertCell();
-        commandCell.appendChild(document.createTextNode("!xd sound"));
-        const descriptionCell = row.insertCell();
-        descriptionCell.appendChild(document.createTextNode("Play the sound `sound`"));
-
-        for (const cmd of Object.keys(COMMANDS)) {
-          const row = tbody.insertRow();
-          const commandCell = row.insertCell();
-          commandCell.appendChild(document.createTextNode(`!xd ${cmd} ${COMMANDS[cmd].args.join(" ")}`));
-          const descriptionCell = row.insertCell();
-          descriptionCell.appendChild(document.createTextNode(COMMANDS[cmd].description));
-        }
-      })();
-    </script>
+    <script src="index.js" type="module"></script>
   </body>
 </html>

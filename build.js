@@ -14,9 +14,8 @@ if (fs.existsSync("build")) {
 }
 fs.mkdirSync("build");
 
-const index = fs
-  .readFileSync("index.html", "utf-8")
-  .replace("/*[SOUNDS]*/", `const SOUNDS = JSON.parse(${JSON.stringify(sounds)});`);
-fs.writeFileSync("build/index.html", index, "utf-8");
+const index = fs.readFileSync("index.js", "utf-8").replace("/*[SOUNDS]*/", `JSON.parse(${JSON.stringify(sounds)})`);
+fs.writeFileSync("build/index.js", index, "utf-8");
+fs.copyFileSync("index.html", "build/index.html");
 fs.copyFileSync(".nojekyll", "build/.nojekyll");
 fs.cpSync("sounds", "build/sounds", { recursive: true });
