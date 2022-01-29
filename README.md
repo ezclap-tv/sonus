@@ -2,9 +2,7 @@
 
 Sound clips controlled by Twitch chat.
 
-https://ezclap.tv/ear-violator-9000/#moscowwbish
-
-Replace `moscowwbish` in the link above with any channel name to make it listen for commands in that channel's chat.
+https://ezclap.tv/ear-violator-9000
 
 ### Local development
 
