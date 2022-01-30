@@ -183,7 +183,7 @@
     const player = new Player(/*[SOUNDS]*/);
 
     const violatee = CHANNEL;
-    const prefs = new Store(`preferences.${violatee}`, { autoplay: true });
+    const prefs = new Store(`preferences.${violatee}`, { autoplay: false });
     const violators = new Store(`violators.${violatee}`, unique([violatee]));
     /**
      * @type {Record<string, {
@@ -236,7 +236,8 @@
       $autoplay: {
         allows: (user) => user == violatee,
         handle(user, args) {
-          if (!args[0] || ["on", "off"].findIndex((x) => x == args[0].toLowerCase()) == -1) {
+          const target = args.join().trim().toLowerCase();
+          if (!["on", "off"].includes(target)) {
             return;
           }
           prefs.set({ ...prefs.get(), autoplay: args[0].toLowerCase() === "on" });
