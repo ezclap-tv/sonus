@@ -115,15 +115,17 @@
 
   const PREFIX = "!xd";
   const RE = /:(.*)!.*PRIVMSG.*:(.*)[\r\n]*/;
-  function handle(commands, message) {
+  function handle(prefs, commands, message) {
     const matches = RE.exec(message);
     if (!matches) return;
 
     const [user, msg] = matches.slice(1);
     if (!user || !msg) return;
 
-    const [prefix, cname, ...args] = msg.split(" ");
-    if (prefix !== PREFIX) return;
+    let [prefix, cname, ...args] = msg.split(" ");
+    if (prefix !== PREFIX && prefs.get().autoplay) {
+      cname = prefix;
+    } else if (prefix !== PREFIX) return;
 
     const cmd = cname.startsWith("$") ? commands[cname] : commands.$play;
     if (!cmd.allows(user)) return;
@@ -181,7 +183,8 @@
     const player = new Player(/*[SOUNDS]*/);
 
     const violatee = CHANNEL;
-    const violators = new Store(`violators.${violatee}`, unique([violatee, "moscowwbish"]));
+    const prefs = new Store(`preferences.${violatee}`, { autoplay: true });
+    const violators = new Store(`violators.${violatee}`, unique([violatee]));
     /**
      * @type {Record<string, {
      *  allows: (user: string) => boolean,
@@ -229,6 +232,18 @@
         },
         args: ["username"],
         description: "Remove `username` from the violators list",
+      },
+      $autoplay: {
+        allows: (user) => user == violatee,
+        handle(user, args) {
+          if (!args[0] || ["on", "off"].findIndex((x) => x == args[0].toLowerCase()) == -1) {
+            return;
+          }
+          prefs.set({ ...prefs.get(), autoplay: args[0].toLowerCase() === "on" });
+          console.log(`${user} set autoplay to ${prefs.get().autoplay}`);
+        },
+        args: ["on/off"],
+        description: "Allow to play sounds by simply typing their name in chat.",
       },
     };
 
@@ -297,7 +312,7 @@
 
     function onmessage({ data }) {
       if (data.includes("PING")) return ws.send("PONG :tmi.twitch.tv");
-      handle(commands, data);
+      handle(prefs, commands, data);
     }
 
     let ws = await connect(CHANNEL);
@@ -308,6 +323,7 @@
     console.log("channel", CHANNEL);
     console.log("prefix", PREFIX);
     console.log("commands", Object.keys(commands));
+    console.log("preferences", prefs.get());
     console.log("violatee", violatee);
     console.log("violators", violators.get());
     console.log("sounds", player.sounds);
