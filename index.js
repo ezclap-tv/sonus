@@ -123,9 +123,10 @@
     if (!user || !msg) return;
 
     let [prefix, cname, ...args] = msg.split(" ");
-    if (prefix !== PREFIX && prefs.get().autoplay) {
+    if (prefix !== PREFIX) {
+      if (!prefs.get().autoplay) return;
       cname = prefix;
-    } else if (prefix !== PREFIX) return;
+    }
 
     const cmd = cname.startsWith("$") ? commands[cname] : commands.$play;
     if (!cmd.allows(user)) return;
