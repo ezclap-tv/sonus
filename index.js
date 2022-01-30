@@ -240,7 +240,7 @@
           if (!["on", "off"].includes(target)) {
             return;
           }
-          prefs.set({ ...prefs.get(), autoplay: args[0].toLowerCase() === "on" });
+          prefs.set({ ...prefs.get(), autoplay: target === "on" });
           console.log(`${user} set autoplay to ${prefs.get().autoplay}`);
         },
         args: ["on/off"],
