@@ -82,6 +82,7 @@
     async play(name) {
       if (this.playing) this.stop();
       const file = this.get(name);
+      if (!file) return;
 
       this.callbacks.play.forEach((c) => c(name));
       this.playing = name;
@@ -103,8 +104,8 @@
     }
 
     stop() {
-      if (!this.playing) return;
       const file = this.get(this.playing);
+      if (!file) return;
       file.pause();
       file.currentTime = 0;
       this.callbacks.stop.forEach((c) => c(this.playing));
