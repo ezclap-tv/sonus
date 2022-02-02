@@ -200,7 +200,7 @@
         handle(user, args) {
           const sound = args.join();
           console.log(`${user} played ${sound}`);
-          player.play(sound);
+          player.play(sound.toLowerCase());
         },
         args: ["sound"],
         description: "Play the sound `sound`",
