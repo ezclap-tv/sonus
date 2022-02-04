@@ -80,7 +80,12 @@
       this.#key = key;
       this.#serialize = serialize;
       this.#deserialize = deserialize;
-      this.#data = localStorage[key] ? this.#deserialize(localStorage[key]) : initial();
+      if (localStorage[key]) {
+        this.#data = this.#deserialize(localStorage[key]);
+      } else {
+        this.#data = initial();
+        localStorage[this.#key] = this.#serialize(this.#data);
+      }
     }
 
     /**
@@ -88,7 +93,7 @@
      */
     set(data) {
       this.#data = data;
-      localStorage.setItem(this.#key, this.#serialize(data));
+      localStorage[this.#key] = this.#serialize(data);
     }
 
     /**
@@ -99,12 +104,11 @@
     }
 
     /**
-     * @param {(v: T) => void} mutator
+     * @param {(v: T) => T} mutator
      */
     update(mutator) {
       const value = this.get();
-      mutator(value);
-      this.set(value);
+      this.set(mutator(value));
     }
   }
 
@@ -313,13 +317,28 @@
     const player = new Player(/*[SOUNDS]*/);
 
     const violatee = CHANNEL;
-    const prefs = new Store(`preferences.${violatee}`, () => ({ autoplay: false }));
+    const chieftains = new Store(`chieftains.${violatee}`, () => unique([violatee]));
     const violators = new Store(`violators.${violatee}`, () => unique([violatee]));
+    /**
+     * @param {string} user
+     * @param {"violator" | "chieftain" | "violatee"} level
+     */
+    const perms = (user, level) => {
+      switch (level) {
+        case "violator":
+          return user === violatee || chieftains.get().includes(user) || violators.get().includes(user);
+        case "chieftain":
+          return user === violatee || chieftains.get().includes(user);
+        case "violatee":
+          return user === violatee;
+      }
+    };
+    const prefs = new Store(`preferences.${violatee}`, () => ({ autoplay: false }));
     /** @type {Store<Record<string, string>>} */
     const aliases = new Store(`aliases.${violatee}`, () => ({}));
     const commands = define({
       $play: {
-        allows: (user) => violators.get().includes(user),
+        allows: (user) => perms(user, "violator"),
         /**
          * @param {string} user
          * @param {string} sound
@@ -335,7 +354,7 @@
         description: () => "Play the sound {0}",
       },
       $stop: {
-        allows: (user) => violators.get().includes(user),
+        allows: (user) => perms(user, "violator"),
         handle(user) {
           if (!player.playing) return;
           player.stop();
@@ -344,7 +363,7 @@
         description: () => "Stop playing the current sound",
       },
       $add: {
-        allows: (user) => user === violatee,
+        allows: (user) => perms(user, "chieftain"),
         handle(user, username) {
           username = username.trim().toLowerCase();
           violators.update((v) => unique([...v, username]));
@@ -353,7 +372,7 @@
         description: () => "Add {0} to the violators list",
       },
       $rm: {
-        allows: (user) => user === violatee,
+        allows: (user) => perms(user, "chieftain"),
         handle(user, username) {
           username = username.trim().toLowerCase();
           violators.update((v) => v.filter((u) => u !== username));
@@ -364,17 +383,23 @@
       $autoplay: {
         _: {
           on: {
-            allows: (user) => user === violatee,
+            allows: (user) => perms(user, "chieftain"),
             handle(user) {
-              prefs.update((v) => (v.autoplay = true));
+              prefs.update((v) => {
+                v.autoplay = true;
+                return v;
+              });
               console.log(`${user} enabled autoplay mode`);
             },
             description: () => "Enable autoplay mode",
           },
           off: {
-            allows: (user) => user === violatee,
+            allows: (user) => perms(user, "chieftain"),
             handle(user) {
-              prefs.update((v) => (v.autoplay = false));
+              prefs.update((v) => {
+                v.autoplay = false;
+                return v;
+              });
               console.log(`${user} disabled autoplay mode`);
             },
             description: () => "Disable autoplay mode",
@@ -384,24 +409,50 @@
       $alias: {
         _: {
           add: {
-            allows: (user) => user === violatee,
+            allows: (user) => perms(user, "chieftain"),
             handle(user, name, as) {
               name = name.toLowerCase();
               as = as.toLowerCase();
               const exists = name in aliases.get();
-              aliases.update((v) => (v[name] = as));
+              aliases.update((v) => {
+                v[name] = as;
+                return v;
+              });
               console.log(`${user} ${exists ? "updated" : "added"} an alias: ${name} -> ${as}`);
             },
             description: () => "Add {0} as an alias for {1}",
           },
           rm: {
-            allows: (user) => user === violatee,
+            allows: (user) => perms(user, "chieftain"),
             handle(user, name) {
               name = name.toLowerCase();
-              aliases.update((v) => delete v[name]);
+              aliases.update((v) => {
+                delete v[name];
+                return v;
+              });
               console.log(`${user} removed an alias: ${name}`);
             },
             description: () => "Remove {0} as an alias",
+          },
+        },
+      },
+      $chief: {
+        _: {
+          add: {
+            allows: (user) => perms(user, "violatee"),
+            handle(user, target) {
+              chieftains.update((v) => unique([...v, target]));
+              console.log(`${user} added ${target} to chieftains`);
+            },
+            description: () => "Add {0} to chieftains (able to use privileged commands)",
+          },
+          rm: {
+            allows: (user) => perms(user, "violatee"),
+            handle(user, target) {
+              chieftains.update((v) => v.filter((t) => t !== target));
+              console.log(`${user} removed ${target} from chieftains`);
+            },
+            description: () => "Remove {0} from chieftains",
           },
         },
       },
