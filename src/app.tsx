@@ -1,14 +1,6 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta content="IE=edge" http-equiv="X-UA-Compatible" />
-    <title>Sounds</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport" />
-  </head>
-  <body>
-    <!-- <div id="app"></div> -->
 
+export const App = () => (
+  <>
     <div>
       <input type="text" id="channel" placeholder="...channel" />
       <button type="button" id="submit">Submit</button>
@@ -36,6 +28,5 @@
         <tbody></tbody>
       </table>
     </div>
-    <script src="/src/main.ts" type="module"></script>
-  </body>
-</html>
+  </>
+)
