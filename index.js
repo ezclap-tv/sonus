@@ -70,6 +70,9 @@
     #serialize;
     /** @type {(v: string) => T} */
     #deserialize;
+    /** @type {Set<(v: T) => void>} */
+    #listeners;
+
     /**
      * @param {string} key
      * @param {() => T} initial
@@ -80,6 +83,7 @@
       this.#key = key;
       this.#serialize = serialize;
       this.#deserialize = deserialize;
+      this.#listeners = new Set();
       if (localStorage[key]) {
         this.#data = this.#deserialize(localStorage[key]);
       } else {
@@ -94,6 +98,7 @@
     set(data) {
       this.#data = data;
       localStorage[this.#key] = this.#serialize(data);
+      this.#listeners.forEach((f) => f(data));
     }
 
     /**
@@ -109,6 +114,21 @@
     update(mutator) {
       const value = this.get();
       this.set(mutator(value));
+    }
+
+    /**
+     * @param {(v: T) => void} listener
+     */
+    subscribe(listener) {
+      this.#listeners.add(listener);
+      listener(this.#data);
+    }
+
+    /**
+     * @param {(v: T) => void} listener
+     */
+    unsubscribe(listener) {
+      this.#listeners.delete(listener);
     }
   }
 
@@ -196,7 +216,6 @@
     }
   }
 
-  const PREFIX = "!xd";
   const RE = /:(.*)!.*PRIVMSG.*:(.*)[\r\n]*/;
 
   /**
@@ -230,10 +249,11 @@
   /**
    * @param {Record<string, boolean>} prefs
    * @param {CommandMap} commands
+   * @param {string} prefix
    * @param {string} message
    * @returns
    */
-  function handle(prefs, commands, message) {
+  function handle(prefs, commands, prefix, message) {
     const matches = RE.exec(message);
     if (!matches) return;
 
@@ -241,9 +261,9 @@
     if (!user || !msg) return;
 
     // we don't want to allow prefix-less messages when autoplay mode is not enabled
-    if (!prefs.autoplay && !msg.startsWith(PREFIX)) return;
+    if (!prefs.autoplay && !msg.startsWith(prefix)) return;
     // if message starts with prefix, it is the first argument, so skip it
-    const rawArgs = msg.startsWith(PREFIX) ? msg.split(" ").slice(1) : msg.split(" ");
+    const rawArgs = msg.startsWith(prefix) ? msg.split(" ").slice(1) : msg.split(" ");
     let cmd = resolve(commands, rawArgs);
     if (!cmd) cmd = commands.$play;
     // resolved command must be a handler
@@ -317,6 +337,7 @@
     const player = new Player(/*[SOUNDS]*/);
 
     const violatee = CHANNEL;
+    const prefix = new Store(`prefix.${violatee}`, () => "!xd");
     const chieftains = new Store(`chieftains.${violatee}`, () => unique([violatee]));
     const violators = new Store(`violators.${violatee}`, () => unique([violatee]));
     /**
@@ -456,6 +477,14 @@
           },
         },
       },
+      $prefix: {
+        allows: (user) => perms(user, "violatee"),
+        handle(user, value) {
+          prefix.update(() => value);
+          console.log(`${user} updated prefix to ${value}`);
+        },
+        description: () => "Set command prefix to {0}",
+      },
     });
 
     // command table
@@ -465,7 +494,9 @@
 
       const row = tbody.insertRow();
       const commandCell = row.insertCell();
-      commandCell.appendChild(document.createTextNode("!xd {0}"));
+      const commandText = document.createTextNode(`${prefix.get()} {0}`);
+      prefix.subscribe((v) => (commandText.data = v));
+      commandCell.appendChild(commandText);
       const descriptionCell = row.insertCell();
       descriptionCell.appendChild(document.createTextNode("Play the sound {0}"));
 
@@ -479,7 +510,9 @@
           .fill(0)
           .map((_, i) => `{${i}}`)
           .join(" ");
-        cmd.appendChild(document.createTextNode(`!xd ${chain.join(" ")} ${args}`));
+        const cmdText = document.createTextNode(`${chain.join(" ")} ${args}`);
+        prefix.subscribe((v) => (cmdText.data = `${v} ${chain.join(" ")} ${args}`));
+        cmd.appendChild(cmdText);
 
         const desc = row.insertCell();
         if (node.description) desc.appendChild(document.createTextNode(node.description()));
@@ -498,7 +531,7 @@
         const commandCell = row.insertCell();
         const copyButton = document.createElement("button");
         commandCell.appendChild(copyButton);
-        copyButton.textContent = `!xd ${sound}`;
+        copyButton.textContent = `${prefix.get()} ${sound}`;
         let clicked = false;
         copyButton.onclick = async () => {
           if (clicked) return;
@@ -507,10 +540,11 @@
           copyButton.textContent = "Copied!";
           clicked = true;
           setTimeout(() => {
-            copyButton.textContent = `!xd ${sound}`;
+            copyButton.textContent = `${prefix.get()} ${sound}`;
             clicked = false;
           }, 1000);
         };
+        prefix.subscribe((v) => (copyButton.textContent = `${v} ${sound}`));
 
         const playCell = row.insertCell();
         const playButton = document.createElement("button");
@@ -543,7 +577,7 @@
      */
     function onmessage({ data: message }) {
       if (message.includes("PING")) return ws.send("PONG :tmi.twitch.tv");
-      handle(prefs.get(), commands, message);
+      handle(prefs.get(), commands, prefix.get(), message);
     }
 
     let ws = await connect(CHANNEL);
@@ -552,8 +586,8 @@
 
     console.log("Connected");
     console.log("channel", CHANNEL);
-    console.log("prefix", PREFIX);
-    console.log("commands", Object.keys(commands));
+    console.log("prefix", prefix.get());
+    console.log("commands", commands);
     console.log("preferences", prefs.get());
     console.log("violatee", violatee);
     console.log("violators", violators.get());
