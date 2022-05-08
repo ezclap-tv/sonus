@@ -1,9 +1,9 @@
+import "./water/index.css";
 import "preact";
 import { define, handle, visit } from "./command";
 import { connect } from "./irc";
 import { Player } from "./player";
 import { Store } from "./store";
-import "./water.css";
 
 const unique = <T>(a: T[]) => [...new Set(a)];
 
