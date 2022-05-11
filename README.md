@@ -6,6 +6,8 @@ https://ezclap.tv/sonus
 
 ### Personal deployment
 
+Note: You only need a personal deployment if you want to add/remove sounds. If all you want is just to use it with the existing sounds, create a browser source with a link to `https://ezclap.tv/sonus/#<YOUR_CHANNEL>`, e.g. if your channel name is `hunter123`, use `https://ezclap.tv/sonus/#hunter123`.
+
 All you need is a GitHub account.
 
 1. Fork the repository but _do not change the name!_
@@ -24,6 +26,8 @@ In order to use this in OBS:
 1. You're done!
 
 Open the same link in a browser to explore the available commands, and try sending some in your chat. Note that the bot cannot reply to your commands. An explicit goal of this tool is to not require any authentication tokens in order to work. It may become an optional feature in the future.
+
+To modify sounds, clone the repository, make any changes you want, then commit and push your changes. The deployment will update with any added/removed sounds in a minute or two.
 
 ### Local development
 
