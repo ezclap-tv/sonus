@@ -5,7 +5,7 @@ const Channel = ({ channel }: { channel?: string }) => {
   return (
     <InlineInput
       value={channel}
-      placeholder="...channel"
+      placeholder="channel"
       onSubmit={(v) => {
         window.location.hash = v;
         window.location.reload();

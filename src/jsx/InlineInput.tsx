@@ -19,7 +19,7 @@ const InlineInput = ({
       <input
         ref={inputRef}
         type="text"
-        defaultValue={value}
+        value={value}
         placeholder={placeholder}
         onKeyUp={({ code }) => code === "Enter" && submit()}
       />

@@ -4,6 +4,7 @@ import type { Player } from "../core/player";
 import Commands from "./Commands";
 import Sounds from "./Sounds";
 import Channel from "./Channel";
+import Prefix from "./Prefix";
 
 // TODO: also display
 //       - preferences
@@ -16,6 +17,7 @@ const App = ({ commands, player, channel }: { commands: CommandMap; player: Play
     <Channel channel={channel} />
     {channel && (
       <>
+        <Prefix />
         <Commands commands={commands} />
         <Sounds player={player} />
       </>
