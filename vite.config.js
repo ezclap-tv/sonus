@@ -1,5 +1,4 @@
 import { defineConfig } from "vite";
-import preact from "@preact/preset-vite";
 import { replaceCodePlugin } from "vite-plugin-replace";
 import fs from "fs";
 import path from "path";
@@ -15,7 +14,6 @@ export default defineConfig(({ mode }) => {
     build: { target: "esnext" },
     base: mode === "development" ? "/" : `${BASE_URL}`,
     plugins: [
-      preact(),
       replaceCodePlugin({ replacements: [{ from: "__SOUNDS__", to: JSON.stringify(`{${sounds}}`) }] }),
     ],
   };

@@ -15,7 +15,7 @@
     "isolatedModules": true,
     "importsNotUsedAsValues": "error",
     "noEmit": true,
-    "jsx": "preserve",
+    "jsx": "react",
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment"
   },

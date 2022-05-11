@@ -1,3 +1,5 @@
+import { useEffect, useState } from "preact/hooks";
+
 export class Store<T> {
   #key: string;
   #data: T;
@@ -5,12 +7,6 @@ export class Store<T> {
   #deserialize: (v: string) => T;
   #listeners: Set<(v: T) => void>;
 
-  /**
-   * @param {string} key
-   * @param {() => T} initial
-   * @param {(v: T) => string} serialize
-   * @param {(v: string) => T} deserialize
-   */
   constructor(
     key: string,
     initial: () => T,
@@ -52,4 +48,19 @@ export class Store<T> {
   unsubscribe(listener: (v: T) => void) {
     this.#listeners.delete(listener);
   }
+
+  /** Remove the key from localStorage. Does not update the value. */
+  private unsave() {
+    localStorage.removeItem(this.#key);
+  }
+}
+
+export function useStore<T>(store: Store<T>): T {
+  const [state, setState] = useState<T>(() => store.get());
+  useEffect(() => {
+    const cb = (v: T) => setState(v);
+    store.subscribe(cb);
+    return () => store.unsubscribe(cb);
+  }, [store]);
+  return state;
 }

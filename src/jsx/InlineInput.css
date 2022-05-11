@@ -1,0 +1,15 @@
+.channel-input {
+  display: block;
+  position: relative;
+  width: fit-content;
+}
+
+.channel-input > button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: transparent;
+  width: fit-content;
+  height: fit-content;
+  padding: 10px;
+}
