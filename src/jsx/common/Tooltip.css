@@ -1,0 +1,41 @@
+.tooltip-trigger {
+  position: relative;
+  width: fit-content;
+  height: fit-content;
+}
+
+.tooltip-trigger > .tooltip-body {
+  transition: opacity 0.1s linear;
+  opacity: 0;
+  
+  pointer-events: none;
+  white-space: nowrap;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 110%);
+  background: var(--border);
+  z-index: 1;
+  padding: 10px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-radius: 6px;
+}
+
+.tooltip-trigger:hover > .tooltip-body {
+  opacity: 1;
+}
+
+.tooltip-trigger > .tooltip-body::before {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--border);
+  border-left: 4px solid var(--border);
+  border-top: 4px solid var(--border);
+}
+

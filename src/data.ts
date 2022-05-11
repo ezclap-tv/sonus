@@ -36,7 +36,10 @@ export const users = new Store<Users>(storeKey("users", channel), () =>
 export type Preferences = {
   autoplay: boolean;
 };
-const defaultPrefs = { autoplay: false };
+const defaultPrefs: Preferences = { autoplay: false };
+export const prefsDescriptions: Record<keyof Preferences, string> = {
+  autoplay: "Allows playing sounds without the command prefix",
+};
 export const prefs = new Store<Preferences>(storeKey("preferences", channel), () => ({ ...defaultPrefs }));
 
 export type Aliases = Record<string, string>;
