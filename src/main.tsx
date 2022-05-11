@@ -1,4 +1,5 @@
 import "./water/index.css";
+import "./main.css";
 
 import { render, h } from "preact";
 import Stores, { player, commands, channel } from "./data";
@@ -17,24 +18,11 @@ player.on("stop", (s) => console.log(`Stopped playing ${s}`));
 render(<App channel={channel} commands={commands} player={player} />, document.querySelector("#app")!);
 
 if (channel) {
-  async function onclose() {
-    console.log("Disconnected, reconnecting...");
-    ws = await connect(channel!);
-    ws.onclose = onclose;
-    ws.onmessage = onmessage;
-  }
-
-  function onmessage({ data: message }: MessageEvent<any>) {
-    if (message.includes("PING")) return ws.send("PONG :tmi.twitch.tv");
+  connect(channel, (message) => {
     console.log("DEBUG", message);
     handle(Stores.users, Stores.prefs, Stores.prefix, commands, message);
-  }
+  });
 
-  let ws = await connect(channel);
-  ws.onclose = onclose;
-  ws.onmessage = onmessage;
-
-  console.log("Connected");
   console.log("channel", channel);
   console.log("prefix", Stores.prefix.get());
   console.log("preferences", Stores.prefs.get());

@@ -6,10 +6,10 @@ import Sounds from "./Sounds";
 import Channel from "./Channel";
 import Prefix from "./Prefix";
 import Preferences from "./Preferences";
+import { NavBar, NavItem } from "./common/Nav";
+import Aliases from "./Aliases";
 
 // TODO: also display
-//       - preferences
-//       - prefix
 //       - aliases
 //       all configurable through UI
 
@@ -18,10 +18,21 @@ const App = ({ commands, player, channel }: { commands: CommandMap; player: Play
     <Channel channel={channel} />
     {channel && (
       <>
-        <Prefix />
-        <Preferences />
-        <Commands commands={commands} />
-        <Sounds player={player} />
+        <NavBar>
+          <NavItem label="Commands" active>
+            <Commands commands={commands} />
+          </NavItem>
+          <NavItem label="Sounds">
+            <Sounds player={player} />
+          </NavItem>
+          <NavItem label="Aliases">
+            <Aliases />
+          </NavItem>
+          <NavItem label="Settings">
+            <Prefix />
+            <Preferences />
+          </NavItem>
+        </NavBar>
       </>
     )}
   </>
