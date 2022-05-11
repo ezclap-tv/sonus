@@ -1,5 +1,5 @@
 {
-  "name": "ear-violator-9000",
+  "name": "sonus",
   "version": "1.0.0",
   "description": "Sound clips controlled by Twitch chat.",
   "main": "index.js",
@@ -11,12 +11,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ezclap-tv/ear-violator-9000.git"
+    "url": "git+https://github.com/ezclap-tv/sonus.git"
   },
   "bugs": {
-    "url": "https://github.com/ezclap-tv/ear-violator-9000/issues"
+    "url": "https://github.com/ezclap-tv/sonus/issues"
   },
-  "homepage": "https://github.com/ezclap-tv/ear-violator-9000#readme",
+  "homepage": "https://github.com/ezclap-tv/sonus#readme",
   "author": "",
   "license": "MIT",
   "devDependencies": {

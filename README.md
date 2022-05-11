@@ -1,13 +1,48 @@
-# ear-violator-9000
+# sonus
 
 Sound clips controlled by Twitch chat.
 
-https://ezclap.tv/ear-violator-9000
+https://ezclap.tv/sonus
+
+### Personal deployment
+
+All you need is a GitHub account.
+
+1. Fork the repository but _do not change the name!_
+1. Go to `Settings` -> `Pages`
+1. Change the `Source` field from `None` to `gh-pages`, and click `Save`
+1. Enable `Enforce HTTPS`
+1. You should see a link that looks like `https://<YOUR_USERNAME>.github.io/sonus/` in the message at the top. If your GitHub username is `hunter123`, your link will be `https://hunter123.github.io/sonus/`.
+1. After a few minutes, reload the page, and the message with the link should be green
+
+At this point, the deployment is complete, and you can follow the link to test it.
+
+In order to use this in OBS:
+
+1. Append `#<YOUR_CHANNEL>` to the link. If your twitch username is `hunter123`, your link will be `https://hunter123.github.io/sonus/#hunter123`.
+1. Create a browser source in OBS, with the link as the URL.
+1. You're done!
+
+Open the same link in a browser to explore the available commands, and try sending some in your chat. Note that the bot cannot reply to your commands. An explicit goal of this tool is to not require any authentication tokens in order to work. It may become an optional feature in the future.
 
 ### Local development
 
-Run the `build.js` script and serve the `build` directory. Restart on any changes.
+Requires [Node.js](https://nodejs.org/en/) and [Yarn](https://yarnpkg.com/)
+
+Install dependencies with
 
 ```
-$ node build.js && python -m http.server 8080 --directory build
+$ yarn
+```
+
+Run the development server with
+
+```
+$ yarn dev
+```
+
+Or build for deployment with
+
+```
+$ yarn build
 ```
