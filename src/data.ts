@@ -1,6 +1,7 @@
 import { Command, CommandMap, Default } from "./core/command";
 import { Player } from "./core/player";
 import { Store } from "./core/store";
+import TTS from "./core/tts";
 import { capitalize } from "./core/util";
 
 export const channel = window.location.hash ? window.location.hash.substring(1) : undefined;
@@ -165,5 +166,13 @@ export const commands: CommandMap = {
       console.log(`${user.name} updated prefix to ${value}`);
     },
     description: "Set command prefix to {0}",
+  },
+  $say: {
+    allows: Role.User,
+    handle(user, text) {
+      TTS.say(text);
+      console.log(`${user.name} said ${text} through TTS`);
+    },
+    description: "Say {0} through TTS",
   },
 };
