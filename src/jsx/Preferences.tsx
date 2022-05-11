@@ -10,9 +10,9 @@ const Preferences = () => {
     <table>
       <thead>
         <tr>
+          <th>Toggle</th>
           <th>Name</th>
           <th>Description</th>
-          <th>&nbsp;</th>
         </tr>
       </thead>
       <tbody>
@@ -20,15 +20,15 @@ const Preferences = () => {
           const description = prefsDescriptions[key as keyof Preferences];
           return (
             <tr>
-              <td>{key}</td>
-              <td>{description}</td>
-              <td style={{ textAlign: "center" }}>
+              <td>
                 <Checkbox
                   key={key}
                   value={value}
                   onSubmit={(newValue) => Stores.prefs.update((v) => ({ ...v, [key]: newValue }))}
                 />
               </td>
+              <td>{key}</td>
+              <td>{description}</td>
             </tr>
           );
         })}

@@ -20,7 +20,6 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@preact/preset-vite": "^2.2.0",
     "typescript": "^4.6.4",
     "vite": "^2.9.8",
     "vite-plugin-replace": "^0.1.1"
