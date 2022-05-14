@@ -9,7 +9,7 @@ const Sounds = ({ player }: { player: Player }) => {
   const prefix = useStore(Stores.prefix);
 
   return (
-    <table>
+    <table class="center-rows">
       <thead>
         <tr>
           <th>Sound</th>
