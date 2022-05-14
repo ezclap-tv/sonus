@@ -26,7 +26,7 @@ const App = ({ commands, player, channel }: { commands: CommandMap; player: Play
             <Sounds player={player} />
           </NavItem>
           <NavItem label="Aliases">
-            <Aliases />
+            <Aliases player={player} />
           </NavItem>
           <NavItem label="Settings">
             <Prefix />
