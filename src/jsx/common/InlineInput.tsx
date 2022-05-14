@@ -1,5 +1,5 @@
-import { h, Fragment } from "preact";
-import { MutableRef, useCallback, useRef } from "preact/hooks";
+import { h } from "preact";
+import { useCallback, useRef } from "preact/hooks";
 import "./InlineInput.css";
 
 const InlineInput = ({
@@ -15,7 +15,7 @@ const InlineInput = ({
   const submit = useCallback(() => inputRef.current && onSubmit(inputRef.current.value), [inputRef]);
 
   return (
-    <span class="channel-input">
+    <span class="inline-input">
       <input
         ref={inputRef}
         type="text"

@@ -1,10 +1,10 @@
-.channel-input {
+.inline-input {
   display: block;
   position: relative;
   width: fit-content;
 }
 
-.channel-input > button {
+.inline-input > button {
   position: absolute;
   top: 0;
   right: 0;
