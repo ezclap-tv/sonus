@@ -34,18 +34,22 @@ export function connect(channel: string, handler: (message: string) => void) {
     ws.onmessage = onmessage;
   }
 
-  async function onopen() {
-    await async_send(ws, "CAP REQ :twitch.tv/membership");
-    let res = await async_send(ws, "NICK justinfan37982");
+  async function onopen(this: WebSocket) {
+    await async_send(this, "CAP REQ :twitch.tv/membership");
+    let res = await async_send(this, "NICK justinfan37982");
     if (res.data.startsWith(":tmi.twitch.tv 001")) {
-      ws.send(`JOIN #${channel}`);
-    } else if (ws.readyState === WebSocket.OPEN) {
-      ws.close();
+      this.send(`JOIN #${channel}`);
+    } else if (this.readyState === WebSocket.OPEN) {
+      this.close();
     }
   }
 
-  function onmessage(event: MessageEvent<string>) {
-    if (event.data.includes("PING")) return ws.send("PONG :tmi.twitch.tv");
+  function onmessage(this: WebSocket, event: MessageEvent<string>) {
+    console.log("DEBUG", event.data);
+    if (event.data.includes("PING")) {
+      console.log("PONG");
+      return this.send("PONG :tmi.twitch.tv");
+    }
     handler(event.data);
   }
 

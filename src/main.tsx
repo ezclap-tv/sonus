@@ -15,13 +15,15 @@ window.Player = player;
 player.on("play", (s) => console.log(`Started playing ${s}`));
 player.on("stop", (s) => console.log(`Stopped playing ${s}`));
 
-render(<App channel={channel} commands={commands} player={player} />, document.querySelector("#app")!);
+render(
+  <App channel={channel} commands={commands} player={player} />,
+  document.querySelector("#app")!
+);
 
 if (channel) {
-  connect(channel, (message) => {
-    console.log("DEBUG", message);
-    handle(Stores.users, Stores.prefs, Stores.prefix, commands, message);
-  });
+  connect(channel, (message) =>
+    handle(Stores.users, Stores.prefs, Stores.prefix, commands, message)
+  );
 
   console.log("channel", channel);
   console.log("prefix", Stores.prefix.get());
