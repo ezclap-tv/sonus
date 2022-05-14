@@ -143,6 +143,7 @@ const $alias: Command = {
       handle(user, name, as) {
         name = name.toLowerCase();
         as = as.toLowerCase();
+        if (!(as in player.sounds)) return;
         const exists = name in aliases.get();
         aliases.update((v) => ({
           ...v,
