@@ -36,7 +36,11 @@ export class Player {
   };
   cooldown: CooldownManager;
 
-  constructor(public channel: string, cooldowns: Store<Cooldowns>, public sounds: Record<string, string> = {}) {
+  constructor(
+    public channel: string,
+    cooldowns: Store<Cooldowns>,
+    public sounds: Record<string, string> = {}
+  ) {
     this.cooldown = new CooldownManager(cooldowns);
   }
 

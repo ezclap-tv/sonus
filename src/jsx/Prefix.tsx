@@ -9,7 +9,11 @@ const Prefix = () => {
 
   return (
     <Tooltip label="Command prefix">
-      <InlineInput value={prefix} onSubmit={(v) => Stores.prefix.set(v)} placeholder="command prefix" />
+      <InlineInput
+        value={prefix}
+        onSubmit={(v) => Stores.prefix.set(v)}
+        placeholder="command prefix"
+      />
     </Tooltip>
   );
 };

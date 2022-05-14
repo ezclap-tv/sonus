@@ -60,8 +60,10 @@ html {
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
-    "Fira Sans", "Droid Sans", "Helvetica Neue", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+    "Helvetica Neue", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji",
+    sans-serif;
   line-height: 1.4;
   max-width: 800px;
   margin: 20px auto;
@@ -73,20 +75,26 @@ body {
 }
 
 button {
-  transition: background-color var(--animation-duration) linear, border-color var(--animation-duration) linear,
-    color var(--animation-duration) linear, box-shadow var(--animation-duration) linear,
+  transition: background-color var(--animation-duration) linear,
+    border-color var(--animation-duration) linear,
+    color var(--animation-duration) linear,
+    box-shadow var(--animation-duration) linear,
     transform var(--animation-duration) ease;
 }
 
 input {
-  transition: background-color var(--animation-duration) linear, border-color var(--animation-duration) linear,
-    color var(--animation-duration) linear, box-shadow var(--animation-duration) linear,
+  transition: background-color var(--animation-duration) linear,
+    border-color var(--animation-duration) linear,
+    color var(--animation-duration) linear,
+    box-shadow var(--animation-duration) linear,
     transform var(--animation-duration) ease;
 }
 
 textarea {
-  transition: background-color var(--animation-duration) linear, border-color var(--animation-duration) linear,
-    color var(--animation-duration) linear, box-shadow var(--animation-duration) linear,
+  transition: background-color var(--animation-duration) linear,
+    border-color var(--animation-duration) linear,
+    color var(--animation-duration) linear,
+    box-shadow var(--animation-duration) linear,
     transform var(--animation-duration) ease;
 }
 
@@ -326,7 +334,8 @@ textarea:not([rows]) {
 }
 
 select {
-  background: var(--background) var(--select-arrow) calc(100% - 12px) 50% / 12px no-repeat;
+  background: var(--background) var(--select-arrow) calc(100% - 12px) 50% / 12px
+    no-repeat;
   padding-right: 35px;
 }
 

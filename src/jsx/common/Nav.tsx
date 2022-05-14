@@ -17,7 +17,11 @@ export const NavItem = ({ children }: Props) => {
   return <>{children}</>;
 };
 
-export const NavBar = ({ children }: { children: VNode<Props> | VNode<Props>[] }) => {
+export const NavBar = ({
+  children,
+}: {
+  children: VNode<Props> | VNode<Props>[];
+}) => {
   const tabs = normalize(children);
   const [activeTab, setActiveTab] = useState(() => tabs[0]?.props.label);
 
@@ -41,7 +45,9 @@ export const NavBar = ({ children }: { children: VNode<Props> | VNode<Props>[] }
           })}
         </ul>
       </nav>
-      <div class="nav-body">{tabs.find((tab) => tab.props.label === activeTab)}</div>
+      <div class="nav-body">
+        {tabs.find((tab) => tab.props.label === activeTab)}
+      </div>
     </div>
   );
 };

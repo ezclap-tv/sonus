@@ -13,14 +13,15 @@ const Aliases = ({ player }: { player: Player }) => {
       delete aliases[name];
       return aliases;
     });
-  const setAlias = (alias: string, command: string) => Stores.aliases.update((v) => {
-    // The double assignment is intentional. The first one ensures that new aliases end up on
-    // the top of the table, and the second one ensures that updating a previous alias will not
-    // change its position in the table.
-    const aliases = { [alias]: command, ...v };
-    aliases[alias] = command;
-    return aliases;
-  });
+  const setAlias = (alias: string, command: string) =>
+    Stores.aliases.update((v) => {
+      // The double assignment is intentional. The first one ensures that new aliases end up on
+      // the top of the table, and the second one ensures that updating a previous alias will not
+      // change its position in the table.
+      const aliases = { [alias]: command, ...v };
+      aliases[alias] = command;
+      return aliases;
+    });
 
   const aliasInputRef = useRef<HTMLInputElement>(null);
   const cmdSelectRef = useRef<HTMLSelectElement>(null);
@@ -49,12 +50,15 @@ const Aliases = ({ player }: { player: Player }) => {
           <td>
             <button
               onClick={() => {
-                const [alias, command] = [aliasInputRef.current, cmdSelectRef.current];
+                const [alias, command] = [
+                  aliasInputRef.current,
+                  cmdSelectRef.current,
+                ];
                 if (alias && command) {
                   setAlias(alias.value, command.value);
                   alias.value = "";
                   command.value = command.options[0].value;
-                };
+                }
               }}
             >
               ✔️
@@ -65,7 +69,9 @@ const Aliases = ({ player }: { player: Player }) => {
           <tr key={alias}>
             <td>{alias}</td>
             <td>{command}</td>
-            <td><button onClick={() => deleteAlias(alias)}>❌</button></td>
+            <td>
+              <button onClick={() => deleteAlias(alias)}>❌</button>
+            </td>
           </tr>
         ))}
       </tbody>

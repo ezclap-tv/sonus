@@ -12,7 +12,10 @@ const InlineInput = ({
   placeholder?: string;
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const submit = useCallback(() => inputRef.current && onSubmit(inputRef.current.value), [inputRef]);
+  const submit = useCallback(
+    () => inputRef.current && onSubmit(inputRef.current.value),
+    [inputRef]
+  );
 
   return (
     <span class="inline-input">

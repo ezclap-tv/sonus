@@ -13,7 +13,15 @@ import Aliases from "./Aliases";
 //       - aliases
 //       all configurable through UI
 
-const App = ({ commands, player, channel }: { commands: CommandMap; player: Player; channel?: string }) => (
+const App = ({
+  commands,
+  player,
+  channel,
+}: {
+  commands: CommandMap;
+  player: Player;
+  channel?: string;
+}) => (
   <>
     <Channel channel={channel} />
     {channel && (

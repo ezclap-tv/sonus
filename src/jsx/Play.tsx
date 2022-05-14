@@ -6,7 +6,10 @@ const Play = ({ sound, player }: { sound: string; player: Player }) => {
   const [playing, setPlaying] = useState(false);
 
   const play = useCallback(() => player.play(sound), [sound, player]);
-  const stop = useCallback(() => player.playing === sound && player.stop(), [sound, player]);
+  const stop = useCallback(
+    () => player.playing === sound && player.stop(),
+    [sound, player]
+  );
 
   useEffect(() => {
     const onPlay = (which: string) => sound === which && setPlaying(true);

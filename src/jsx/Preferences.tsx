@@ -24,7 +24,9 @@ const Preferences = () => {
                 <Checkbox
                   key={key}
                   value={value}
-                  onSubmit={(newValue) => Stores.prefs.update((v) => ({ ...v, [key]: newValue }))}
+                  onSubmit={(newValue) =>
+                    Stores.prefs.update((v) => ({ ...v, [key]: newValue }))
+                  }
                 />
               </td>
               <td>{key}</td>

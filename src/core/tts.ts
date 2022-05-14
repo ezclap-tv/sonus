@@ -1,4 +1,5 @@
-export const say = (text: string) => speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+export const say = (text: string) =>
+  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
 
 const TTS = { say };
 

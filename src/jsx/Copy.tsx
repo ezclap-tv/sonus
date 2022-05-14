@@ -1,7 +1,13 @@
 import { h } from "preact";
 import { useState } from "preact/hooks";
 
-const Copy = ({ text, delay = 1000 /*ms*/ }: { text: string; delay?: number }) => {
+const Copy = ({
+  text,
+  delay = 1000 /*ms*/,
+}: {
+  text: string;
+  delay?: number;
+}) => {
   const [clicked, setClicked] = useState(false);
   const onCopy = async () => {
     if (clicked) return;
@@ -10,7 +16,10 @@ const Copy = ({ text, delay = 1000 /*ms*/ }: { text: string; delay?: number }) =
     setTimeout(() => setClicked(false), delay);
   };
   return (
-    <button onClick={() => onCopy()} onKeyUp={({ code }) => code === "Enter" && onCopy()}>
+    <button
+      onClick={() => onCopy()}
+      onKeyUp={({ code }) => code === "Enter" && onCopy()}
+    >
       {clicked ? "✔️" : text}
     </button>
   );

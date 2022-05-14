@@ -4,9 +4,12 @@ import { Store } from "./core/store";
 import TTS from "./core/tts";
 import { capitalize } from "./core/util";
 
-export const channel = window.location.hash ? window.location.hash.substring(1) : undefined;
+export const channel = window.location.hash
+  ? window.location.hash.substring(1)
+  : undefined;
 
-const storeKey = (key: string, base?: string) => (base ? `${key}.${base}` : "[[empty]]");
+const storeKey = (key: string, base?: string) =>
+  base ? `${key}.${base}` : "[[empty]]";
 
 export const prefix = new Store(storeKey("prefix", channel), () => "!xd");
 
@@ -40,14 +43,25 @@ const defaultPrefs: Preferences = { autoplay: false };
 export const prefsDescriptions: Record<keyof Preferences, string> = {
   autoplay: "Allows playing sounds without the command prefix",
 };
-export const prefs = new Store<Preferences>(storeKey("preferences", channel), () => ({ ...defaultPrefs }));
+export const prefs = new Store<Preferences>(
+  storeKey("preferences", channel),
+  () => ({
+    ...defaultPrefs,
+  })
+);
 
 export type Aliases = Record<string, string>;
-export const aliases = new Store<Aliases>(storeKey("aliases", channel), () => ({}));
+export const aliases = new Store<Aliases>(
+  storeKey("aliases", channel),
+  () => ({})
+);
 
 // NOTE: cooldowns are in seconds
 export type Cooldowns = Record<string, { perUser: number; perSound: number }>;
-export const cooldowns = new Store<Cooldowns>(storeKey("cooldowns", channel), () => ({}));
+export const cooldowns = new Store<Cooldowns>(
+  storeKey("cooldowns", channel),
+  () => ({})
+);
 
 export const Stores = {
   prefix,
@@ -149,7 +163,11 @@ const $alias: Command = {
           ...v,
           [name]: as,
         }));
-        console.log(`${user.name} ${exists ? "updated" : "added"} an alias: ${name} -> ${as}`);
+        console.log(
+          `${user.name} ${
+            exists ? "updated" : "added"
+          } an alias: ${name} -> ${as}`
+        );
       },
       description: "Add {0} as an alias for {1}",
     },

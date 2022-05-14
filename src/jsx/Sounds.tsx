@@ -17,8 +17,8 @@ const Sounds = ({ player }: { player: Player }) => {
           <th>Play</th>
         </tr>
       </thead>
-      <tbody>{Object.keys(player.sounds).map(sound => (
-        (
+      <tbody>
+        {Object.keys(player.sounds).map((sound) => (
           <tr key={sound}>
             <td>{sound}</td>
             <td>
@@ -28,8 +28,8 @@ const Sounds = ({ player }: { player: Player }) => {
               <Play sound={sound} player={player} />
             </td>
           </tr>
-        )
-      ))}</tbody>
+        ))}
+      </tbody>
     </table>
   );
 };

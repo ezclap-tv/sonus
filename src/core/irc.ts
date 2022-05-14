@@ -1,19 +1,29 @@
-async function async_send(ws: WebSocket, msg: string): Promise<MessageEvent<any>> {
+async function async_send(
+  ws: WebSocket,
+  msg: string
+): Promise<MessageEvent<any>> {
   return new Promise((resolve, reject) => {
-    let onmsg = (msg: MessageEvent<any>): void => (ws.removeEventListener("message", onmsg), resolve(msg));
-    let onerr = (err: Event): void => (ws.removeEventListener("error", onerr), reject(err));
+    let onmsg = (msg: MessageEvent<any>): void => (
+      ws.removeEventListener("message", onmsg), resolve(msg)
+    );
+    let onerr = (err: Event): void => (
+      ws.removeEventListener("error", onerr), reject(err)
+    );
     ws.addEventListener("message", onmsg);
     ws.addEventListener("error", onerr);
     ws.send(msg);
   });
 }
 
-const sleep = async (delay: number) => new Promise((done) => setTimeout(done, delay));
+const sleep = async (delay: number) =>
+  new Promise((done) => setTimeout(done, delay));
 
 let delay = 1000;
 
 export function connect(channel: string, handler: (message: string) => void) {
-  const url = `${window.location.protocol.startsWith("https") ? "wss" : "ws"}://irc-ws.chat.twitch.tv`;
+  const url = `${
+    window.location.protocol.startsWith("https") ? "wss" : "ws"
+  }://irc-ws.chat.twitch.tv`;
 
   function onerror(error: any) {
     if (error) console.log(error);

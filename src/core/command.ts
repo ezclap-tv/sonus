@@ -19,7 +19,11 @@ export type CommandMap = Record<string, Command> & { [Default]: Command };
 
 export const define = <T extends CommandMap>(c: T): T => c;
 
-export const visit = (root: CommandNonRoot, visitor: (chain: string[], v: Command) => void, chain: string[] = []) => {
+export const visit = (
+  root: CommandNonRoot,
+  visitor: (chain: string[], v: Command) => void,
+  chain: string[] = []
+) => {
   for (const key of Object.keys(root)) {
     const _chain = [...chain, key];
     const child = root[key];
@@ -32,7 +36,10 @@ export const visit = (root: CommandNonRoot, visitor: (chain: string[], v: Comman
 /**
  * Resolve a command descriptor from a set of arguments
  */
-export function resolve(commands: CommandMap, args: readonly string[]): [Command | null, string[]] {
+export function resolve(
+  commands: CommandMap,
+  args: readonly string[]
+): [Command | null, string[]] {
   if (args.length === 0) return [null, [...args]];
   let root = commands[args[0]];
   if (!root) return [null, [...args]];
