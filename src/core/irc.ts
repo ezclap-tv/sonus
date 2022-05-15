@@ -32,6 +32,9 @@ export function connect(channel: string, handler: (message: Message) => void) {
   }
 
   async function onclose() {
+    clearInterval(pingInterval);
+    pingInterval = -1;
+
     console.warn(`WebSocket closed, reconnecting in ${delay / 1000}s`);
 
     await sleep(delay);
@@ -47,26 +50,29 @@ export function connect(channel: string, handler: (message: Message) => void) {
   }
 
   async function onopen(this: WebSocket) {
-    await async_send(this, "CAP REQ :twitch.tv/tags");
-    let res = await async_send(this, "NICK justinfan37982");
-    if (res.data.startsWith(":tmi.twitch.tv 001")) {
-      this.send(`JOIN #${channel}`);
-    } else if (this.readyState === WebSocket.OPEN) {
-      this.close();
-    }
+    this.send("CAP REQ :twitch.tv/tags\r\n");
+    this.send("PASS hi_twitch\r\n");
+    this.send("NICK justinfan37982\r\n");
+    this.send(`JOIN #${channel}\r\n`);
+
+    pingInterval = setInterval(() => this.send("PING :hi"), 30000);
   }
 
   function onmessage(this: WebSocket, event: MessageEvent<string>) {
-    const msg = Message.parse(event.data);
-    console.log("DEBUG", event.data, msg);
-    if (!msg) return;
-    if (msg.command.kind === "PING") {
-      console.log("PONG");
-      return this.send("PONG :tmi.twitch.tv");
+    const raw = event.data.split("\r\n").filter(Boolean);
+    const parsed = raw.map(Message.parse);
+    console.log("DEBUG", event.data, raw, parsed);
+    for (const message of parsed) {
+      if (!message) return;
+      if (message.command.kind === "PING") {
+        console.log("PONG");
+        return this.send("PONG :tmi.twitch.tv\r\n");
+      }
+      handler(message);
     }
-    handler(msg);
   }
 
+  let pingInterval: number = -1;
   let ws = new WebSocket(url);
   ws.onerror = onerror;
   ws.onclose = onclose;

@@ -1,5 +1,3 @@
-window.addEventListener;
-
 export class Message {
   private constructor(
     public message: string,
