@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
       (sound) =>
         `"${path
           .basename(sound, path.extname(sound))
-          .toLowerCase()}": "${sound}"`
+          .toLowerCase()}": "${sound}"`,
     );
 
   return {

@@ -22,7 +22,7 @@ const Commands = ({ commands }: { commands: CommandMap }) => {
       <tr key={text}>
         <td>{text}</td>
         <td>{node.description ?? "🤷"}</td>
-      </tr>
+      </tr>,
     );
   });
 

@@ -14,7 +14,7 @@ const InlineInput = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const submit = useCallback(
     () => inputRef.current && onSubmit(inputRef.current.value),
-    [inputRef]
+    [inputRef],
   );
 
   return (

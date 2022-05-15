@@ -23,7 +23,7 @@ export const define = <T extends CommandMap>(c: T): T => c;
 export const visit = (
   root: CommandNonRoot,
   visitor: (chain: string[], v: Command) => void,
-  chain: string[] = []
+  chain: string[] = [],
 ) => {
   for (const key of Object.keys(root)) {
     const _chain = [...chain, key];
@@ -39,7 +39,7 @@ export const visit = (
  */
 export function resolve(
   commands: CommandMap,
-  args: readonly string[]
+  args: readonly string[],
 ): [Command | null, string[]] {
   if (args.length === 0) return [null, [...args]];
   let root = commands[args[0]];

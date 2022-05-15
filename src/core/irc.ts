@@ -2,7 +2,7 @@ import { Message } from "./message";
 
 async function async_send(
   ws: WebSocket,
-  msg: string
+  msg: string,
 ): Promise<MessageEvent<any>> {
   return new Promise((resolve, reject) => {
     let onmsg = (msg: MessageEvent<any>): void => (

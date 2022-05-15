@@ -2,7 +2,7 @@
   "useTabs": false,
   "singleQuote": false,
   "endOfLine": "crlf",
-  "trailingComma": "es5",
+  "trailingComma": "all",
   "printWidth": 80,
   "semi": true
 }

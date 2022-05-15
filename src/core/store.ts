@@ -11,7 +11,7 @@ export class Store<T> {
     key: string,
     initial: () => T,
     serialize: (v: T) => string = JSON.stringify,
-    deserialize: (v: string) => T = JSON.parse
+    deserialize: (v: string) => T = JSON.parse,
   ) {
     this.#key = key;
     this.#serialize = serialize;

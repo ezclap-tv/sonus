@@ -8,7 +8,7 @@ const Play = ({ sound, player }: { sound: string; player: Player }) => {
   const play = useCallback(() => player.play(sound), [sound, player]);
   const stop = useCallback(
     () => player.playing === sound && player.stop(),
-    [sound, player]
+    [sound, player],
   );
 
   useEffect(() => {

@@ -17,12 +17,12 @@ player.on("stop", (s) => console.log(`Stopped playing ${s}`));
 
 render(
   <App channel={channel} commands={commands} player={player} />,
-  document.querySelector("#app")!
+  document.querySelector("#app")!,
 );
 
 if (channel) {
   connect(channel, (message) =>
-    handle(Stores.users, Stores.prefs, Stores.prefix, commands, message)
+    handle(Stores.users, Stores.prefs, Stores.prefix, commands, message),
   );
 
   console.log("channel", channel);

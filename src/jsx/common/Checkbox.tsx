@@ -11,7 +11,7 @@ const Checkbox = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const submit = useCallback(
     () => inputRef.current && onSubmit(inputRef.current.checked),
-    [inputRef]
+    [inputRef],
   );
 
   return (

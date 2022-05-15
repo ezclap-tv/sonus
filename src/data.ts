@@ -33,7 +33,7 @@ export const users = new Store<Users>(storeKey("users", channel), () =>
           role: Role.Streamer,
         },
       }
-    : {}
+    : {},
 );
 
 export type Preferences = {
@@ -47,20 +47,20 @@ export const prefs = new Store<Preferences>(
   storeKey("preferences", channel),
   () => ({
     ...defaultPrefs,
-  })
+  }),
 );
 
 export type Aliases = Record<string, string>;
 export const aliases = new Store<Aliases>(
   storeKey("aliases", channel),
-  () => ({})
+  () => ({}),
 );
 
 // NOTE: cooldowns are in seconds
 export type Cooldowns = Record<string, { perUser: number; perSound: number }>;
 export const cooldowns = new Store<Cooldowns>(
   storeKey("cooldowns", channel),
-  () => ({})
+  () => ({}),
 );
 
 export const Stores = {
@@ -146,7 +146,7 @@ const $prefs: Command = {
     }
   },
   description: `Update preference {0}. Keys: ${Object.keys(defaultPrefs).join(
-    ", "
+    ", ",
   )}, values: toggle, on/true/yes, off/false/no`,
 };
 
@@ -166,7 +166,7 @@ const $alias: Command = {
         console.log(
           `${user.name} ${
             exists ? "updated" : "added"
-          } an alias: ${name} -> ${as}`
+          } an alias: ${name} -> ${as}`,
         );
       },
       description: "Add {0} as an alias for {1}",
