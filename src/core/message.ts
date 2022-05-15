@@ -35,7 +35,7 @@ export class Message {
     let channel: string | undefined;
     let params: string[] | undefined;
 
-    let remainder = message;
+    let remainder = message.trimEnd();
 
     tags: if (remainder.startsWith("@")) {
       remainder = remainder.slice(1);
@@ -100,7 +100,7 @@ export class Message {
       }
 
       if (remainder.startsWith(":")) {
-        params = [remainder];
+        params = [remainder.slice(1)];
         break params;
       }
 
