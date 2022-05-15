@@ -1,4 +1,5 @@
 import { Preferences, Role, User, Users } from "../data";
+import type { Message } from "./message";
 import type { Store } from "./store";
 
 export type CommandNode = {
@@ -65,12 +66,9 @@ export function handle(
   prefs: Store<Preferences>,
   prefix: Store<string>,
   commands: CommandMap,
-  message: string
+  message: Message,
 ) {
-  const matches = RE.exec(message);
-  if (!matches) return;
-
-  const [username, msg] = matches.slice(1);
+  const [username, msg] = [message.prefix?.nick, message.params.at(-1)];
   if (!username || !msg) return;
 
   const isPrefixed = msg.startsWith(prefix.get());

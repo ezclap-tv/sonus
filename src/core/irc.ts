@@ -1,3 +1,5 @@
+import { Message } from "./message";
+
 async function async_send(
   ws: WebSocket,
   msg: string
@@ -20,7 +22,7 @@ const sleep = async (delay: number) =>
 
 let delay = 1000;
 
-export function connect(channel: string, handler: (message: string) => void) {
+export function connect(channel: string, handler: (message: Message) => void) {
   const url = `${
     window.location.protocol.startsWith("https") ? "wss" : "ws"
   }://irc-ws.chat.twitch.tv`;
@@ -45,7 +47,7 @@ export function connect(channel: string, handler: (message: string) => void) {
   }
 
   async function onopen(this: WebSocket) {
-    await async_send(this, "CAP REQ :twitch.tv/membership");
+    await async_send(this, "CAP REQ :twitch.tv/tags");
     let res = await async_send(this, "NICK justinfan37982");
     if (res.data.startsWith(":tmi.twitch.tv 001")) {
       this.send(`JOIN #${channel}`);
@@ -55,12 +57,14 @@ export function connect(channel: string, handler: (message: string) => void) {
   }
 
   function onmessage(this: WebSocket, event: MessageEvent<string>) {
-    console.log("DEBUG", event.data);
-    if (event.data.includes("PING")) {
+    const msg = Message.parse(event.data);
+    console.log("DEBUG", event.data, msg);
+    if (!msg) return;
+    if (msg.command.kind === "PING") {
       console.log("PONG");
       return this.send("PONG :tmi.twitch.tv");
     }
-    handler(event.data);
+    handler(msg);
   }
 
   let ws = new WebSocket(url);
