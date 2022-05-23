@@ -100,7 +100,6 @@ export function handle(
     ? msg.slice(prefix.get().length).split(" ")
     : msg.split(" ");
   let [cmd, resolvedArgs] = resolve(commands, rawArgs);
-  console.log(cmd, resolvedArgs);
   if (!cmd) cmd = commands[Default];
   // also, resolved command must be a handler
   if (!("handle" in cmd)) return;

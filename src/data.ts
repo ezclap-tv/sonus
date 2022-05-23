@@ -64,31 +64,66 @@ export const cooldowns = new Store<Cooldowns>(
   () => ({}),
 );
 
+export type TtsCooldown = { global: number; user: number };
+export const ttsCooldown = new Store<TtsCooldown>(
+  storeKey("ttsCooldown", channel),
+  () => ({ global: 1000, user: 1000 }),
+);
+
 export const Stores = {
   prefix,
   users,
   prefs,
   aliases,
   cooldowns,
+  ttsCooldown,
 };
 export default Stores;
 
-export const player = new Player(channel!, cooldowns, JSON.parse(__SOUNDS__));
+export const player = new Player(channel!, JSON.parse(__SOUNDS__));
+const playerCooldownManager = {
+  current: {
+    perUser: {} as Record<string, number>,
+    perSound: {} as Record<string, number>,
+  },
+  check(sound: string, user: string): boolean {
+    if (!(sound in cooldowns.get())) return true;
+    const cooldown = cooldowns.get()[sound];
+
+    const now = Date.now();
+    if (
+      now <= (this.current.perSound[sound] ?? 0) + (cooldown.perSound ?? 0) ||
+      now <= (this.current.perUser[user] ?? 0) + (cooldown.perUser ?? 0)
+    ) {
+      return false;
+    }
+
+    this.current.perSound[sound] = now;
+    this.current.perUser[user] = now;
+
+    return true;
+  },
+};
 
 const $play: Command = {
   allows: Role.User,
   handle(user, sound) {
     if (player.playing) return;
-    // normalize, accept first part of args as sound
-    sound = sound.toLowerCase().split(" ")[0];
-    // resolve alias
-    sound = sound in aliases.get() ? aliases.get()[sound] : sound;
-    if (sound in player.sounds) {
-      console.log(`${user.name} played ${sound}`);
-      player.play(sound, user.name);
+    if (
+      user.role >= Role.Editor ||
+      playerCooldownManager.check(sound, user.name)
+    ) {
+      // normalize, accept first part of args as sound
+      sound = sound.toLowerCase().split(" ")[0];
+      // resolve alias
+      sound = sound in aliases.get() ? aliases.get()[sound] : sound;
+      if (sound in player.sounds) {
+        console.log(`${user.name} played ${sound}`);
+        player.play(sound, user.name);
+      }
     }
   },
-  description: "Play the sound {0}",
+  description: "Play the sound {0}.",
   example: (p) => `${p}play ame_hates_minecraft`,
 };
 
@@ -99,7 +134,7 @@ const $stop: Command = {
     console.log(`${user.name} stopped ${player.playing}`);
     player.stop();
   },
-  description: "Stop playing the current sound",
+  description: "Stop playing the current sound.",
   example: (p) => `${p}stop`,
 };
 
@@ -150,7 +185,7 @@ const $prefs: Command = {
   },
   description: `Update preference {0}. Keys: ${Object.keys(defaultPrefs).join(
     ", ",
-  )}, values: toggle, on/true/yes, off/false/no`,
+  )}, values: on/true/yes, off/false/no`,
   example: (p) => `${p}prefs autoplay on`,
 };
 
@@ -173,7 +208,8 @@ const $alias: Command = {
           } an alias: ${name} -> ${as}`,
         );
       },
-      description: "Add {0} as an alias for {1}",
+      description:
+        "Add {0} as an alias for {1}. Note that you can't create an alias which is named the same as an existing sound.",
       example: (p) => `${p}alias set SSSsss ame_hates_minecraft`,
     },
     rm: {
@@ -187,7 +223,7 @@ const $alias: Command = {
         });
         console.log(`${user.name} removed an alias: ${name}`);
       },
-      description: "Remove {0} as an alias",
+      description: "Remove {0} from aliases.",
       example: (p) => `${p}alias rm SSSsss`,
     },
   },
@@ -196,18 +232,43 @@ const $alias: Command = {
 const $prefix: Command = {
   allows: Role.Streamer,
   handle(user, value) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, value.length - 1);
+    }
     prefix.update(() => value);
     console.log(`${user.name} updated prefix to ${value}`);
   },
-  description: "Set command prefix to {0}",
-  example: (p) => `${p}prefix \``,
+  description: "Set command prefix to {0}. {0} may be enclosed in quotes.",
+  example: (p) => `${p}prefix !`,
+};
+
+const ttsCooldownManager = {
+  current: { global: 0, user: {} as Record<string, number> },
+  check(user: string) {
+    const config = ttsCooldown.get();
+    const now = Date.now();
+    const elapsedGlobal = now - this.current.global;
+    const elapsedUser = now - (this.current.user[user] ?? 0);
+    if (config.global >= elapsedGlobal || config.user >= elapsedUser) {
+      return false;
+    }
+    this.current.global = now;
+    this.current.user[user] = now;
+    return true;
+  },
 };
 
 const $say: Command = {
   allows: Role.User,
   handle(user, text) {
-    TTS.say(text);
-    console.log(`${user.name} said ${text} through TTS`);
+    console.log(user, ttsCooldownManager.current);
+    if (user.role >= Role.Editor || ttsCooldownManager.check(user.name)) {
+      TTS.say(text);
+      console.log(`${user.name} said ${text} through TTS`);
+    }
   },
   description: "Say {0} through TTS",
   example: (p) => `${p}say L_? L_? L_? L_? L_? L_? L_? L_? L_?`,
@@ -223,9 +284,11 @@ const _cooldownPreset = (which: "user" | "sound") => {
     allows: Role.Editor,
     handle(user, name, value) {
       const millis = parseDuration(value);
-      // resolve alias
-      if (name in aliases.get()) name = aliases.get()[name];
-      if (!(name in player.sounds)) return;
+      if (!(name in player.sounds)) {
+        // resolve alias if sound is not found
+        if (name in aliases.get()) name = aliases.get()[name];
+        else return;
+      }
 
       cooldowns.update((v) => ({
         ...v,
@@ -239,7 +302,7 @@ const _cooldownPreset = (which: "user" | "sound") => {
       }));
       console.log(`${user.name} set cooldown of ${name} to ${value}`);
     },
-    description: `Set ${which} cooldown for {0} to {1}`,
+    description: `Set ${which} cooldown for {0} to {1}. {1} is either a number in seconds, or a free-form value such as "1min 30s".`,
     example: (p) => `${p}cooldown set ${which} ame_hates_minecraft 1m 30s`,
   };
   const rm: Command = {
@@ -261,7 +324,7 @@ const _cooldownPreset = (which: "user" | "sound") => {
       });
       console.log(`${user.name} removed cooldown of ${name}`);
     },
-    description: `Remove ${which} cooldown for {0}`,
+    description: `Remove ${which} cooldown for {0}.`,
     example: (p) => `${p}cooldown rm ${which} ame_hates_minecraft`,
   };
 
