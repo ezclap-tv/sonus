@@ -22,6 +22,7 @@ const Commands = ({ commands }: { commands: CommandMap }) => {
       <tr key={text}>
         <td>{text}</td>
         <td>{node.description ?? "🤷"}</td>
+        <td>{node.example?.(prefix)}</td>
       </tr>,
     );
   });
@@ -32,6 +33,7 @@ const Commands = ({ commands }: { commands: CommandMap }) => {
         <tr>
           <th>Command</th>
           <th>Description</th>
+          <th>Example</th>
         </tr>
       </thead>
       <tbody>{rows}</tbody>

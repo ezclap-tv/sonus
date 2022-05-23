@@ -1,4 +1,5 @@
 import { Command, CommandMap, CommandNonRoot, Default } from "./core/command";
+import { parseDuration } from "./core/duration";
 import { Player } from "./core/player";
 import { Store } from "./core/store";
 import TTS from "./core/tts";
@@ -56,7 +57,7 @@ export const aliases = new Store<Aliases>(
   () => ({}),
 );
 
-// NOTE: cooldowns are in seconds
+// NOTE: cooldowns are in milliseconds
 export type Cooldowns = Record<string, { perUser: number; perSound: number }>;
 export const cooldowns = new Store<Cooldowns>(
   storeKey("cooldowns", channel),
@@ -88,6 +89,7 @@ const $play: Command = {
     }
   },
   description: "Play the sound {0}",
+  example: (p) => `${p}play ame_hates_minecraft`,
 };
 
 const $stop: Command = {
@@ -98,6 +100,7 @@ const $stop: Command = {
     player.stop();
   },
   description: "Stop playing the current sound",
+  example: (p) => `${p}stop`,
 };
 
 const $role: Command = {
@@ -119,12 +122,12 @@ const $role: Command = {
     console.log(`${user.name} set role of ${name} to ${role}`);
   },
   description: `Update role for user {0} to {1}. Roles: ${roles.join(", ")}`,
+  example: (p) => `${p}role justinfan91234 editor`,
 };
 
 const $prefs: Command = {
   allows: Role.Streamer,
-  handle(user, args) {
-    let [key, value = "toggle"] = args.split(" ").map((v) => v.toLowerCase());
+  handle(user, key, value) {
     if (key in prefs.get()) {
       const prefKey = key as keyof Preferences;
       switch (value) {
@@ -148,6 +151,7 @@ const $prefs: Command = {
   description: `Update preference {0}. Keys: ${Object.keys(defaultPrefs).join(
     ", ",
   )}, values: toggle, on/true/yes, off/false/no`,
+  example: (p) => `${p}prefs autoplay on`,
 };
 
 const $alias: Command = {
@@ -170,6 +174,7 @@ const $alias: Command = {
         );
       },
       description: "Add {0} as an alias for {1}",
+      example: (p) => `${p}alias set SSSsss ame_hates_minecraft`,
     },
     rm: {
       allows: Role.Editor,
@@ -183,6 +188,7 @@ const $alias: Command = {
         console.log(`${user.name} removed an alias: ${name}`);
       },
       description: "Remove {0} as an alias",
+      example: (p) => `${p}alias rm SSSsss`,
     },
   },
 };
@@ -194,6 +200,7 @@ const $prefix: Command = {
     console.log(`${user.name} updated prefix to ${value}`);
   },
   description: "Set command prefix to {0}",
+  example: (p) => `${p}prefix \``,
 };
 
 const $say: Command = {
@@ -203,6 +210,7 @@ const $say: Command = {
     console.log(`${user.name} said ${text} through TTS`);
   },
   description: "Say {0} through TTS",
+  example: (p) => `${p}say L_? L_? L_? L_? L_? L_? L_? L_? L_?`,
 };
 
 // this exists to avoid 2 sets of identical commands, one for `perUser` and the other for `perSound`
@@ -214,8 +222,7 @@ const _cooldownPreset = (which: "user" | "sound") => {
   const set: Command = {
     allows: Role.Editor,
     handle(user, name, value) {
-      const seconds = Number(value);
-      if (Number.isNaN(seconds)) return;
+      const millis = parseDuration(value);
       // resolve alias
       if (name in aliases.get()) name = aliases.get()[name];
       if (!(name in player.sounds)) return;
@@ -226,13 +233,14 @@ const _cooldownPreset = (which: "user" | "sound") => {
           // set either `perUser` or `perSound` to `seconds`,
           // while preserving the value of the other field,
           // or defaulting the other field to 0
-          [primary]: seconds,
+          [primary]: millis,
           [secondary]: v[name]?.perSound ?? 0,
         } as any,
       }));
-      console.log(`${user.name} set cooldown of ${name} to ${seconds} seconds`);
+      console.log(`${user.name} set cooldown of ${name} to ${value}`);
     },
     description: `Set ${which} cooldown for {0} to {1}`,
+    example: (p) => `${p}cooldown set ${which} ame_hates_minecraft 1m 30s`,
   };
   const rm: Command = {
     allows: Role.Editor,
@@ -254,6 +262,7 @@ const _cooldownPreset = (which: "user" | "sound") => {
       console.log(`${user.name} removed cooldown of ${name}`);
     },
     description: `Remove ${which} cooldown for {0}`,
+    example: (p) => `${p}cooldown rm ${which} ame_hates_minecraft`,
   };
 
   return {

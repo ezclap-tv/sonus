@@ -3,12 +3,14 @@ import type { Message } from "./message";
 import type { Store } from "./store";
 
 export type CommandNode = {
+  example?: (prefix: string) => string;
   description?: string;
   _?: CommandNonRoot;
 };
 export type CommandLeaf = {
   allows: Role | ((user: User) => boolean);
   handle: (user: User, ...args: string[]) => void;
+  example?: (prefix: string) => string;
   description?: string;
   _?: CommandNonRoot;
 };
