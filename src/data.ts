@@ -284,12 +284,12 @@ const $cooldown: Command = {
 
 export const commands: CommandMap = {
   [Default]: $play,
-  $play,
-  $stop,
-  $role,
-  $prefs,
-  $alias,
-  $prefix,
-  $say,
-  $cooldown,
+  play: $play,
+  stop: $stop,
+  role: $role,
+  prefs: $prefs,
+  alias: $alias,
+  prefix: $prefix,
+  say: $say,
+  cooldown: $cooldown,
 };

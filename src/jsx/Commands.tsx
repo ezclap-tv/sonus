@@ -16,7 +16,7 @@ const Commands = ({ commands }: { commands: CommandMap }) => {
       .map((_, i) => `{${i}}`)
       .join(" ");
 
-    const text = `${prefix} ${chain.join(" ")} ${argsText}`;
+    const text = `${prefix}${chain.join(" ")} ${argsText}`;
 
     rows.push(
       <tr key={text}>

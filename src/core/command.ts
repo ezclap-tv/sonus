@@ -33,15 +33,34 @@ export const visit = (
   }
 };
 
-// TODO: resolution should backtrack if arity doesn't match, and also prioritize leaf nodes
 /**
- * Resolve a command descriptor from a set of arguments
+ * Resolve a command descriptor from a set of arguments while consuming any arguments
+ * which are part of the command tree.
+ *
+ * Example:
+ * ```ts
+ * // [{}, ["b", "c"]]
+ * console.log(
+ *   resolve(
+ *     { a: {} },
+ *     ["a", "b", "c"]
+ *   )
+ * )
+ *
+ * // [{}, []]
+ * console.log(
+ *   resolve(
+ *     { a: { _: { b: { _: c: {} } } } },
+ *     ["a", "b", "c"]
+ *   )
+ * )
+ * ```
  */
 export function resolve(
   commands: CommandMap,
   args: readonly string[],
 ): [Command | null, string[]] {
-  if (args.length === 0) return [null, [...args]];
+  if (args.length === 0) return [null, []];
   let root = commands[args[0]];
   if (!root) return [null, [...args]];
 
@@ -75,8 +94,11 @@ export function handle(
   // we don't want to allow prefix-less messages when autoplay mode is not enabled
   if (!prefs.get().autoplay && !isPrefixed) return;
   // if message starts with prefix, it is the first argument, so skip it
-  const rawArgs = isPrefixed ? msg.split(" ").slice(1) : msg.split(" ");
+  const rawArgs = isPrefixed
+    ? msg.slice(prefix.get().length).split(" ")
+    : msg.split(" ");
   let [cmd, resolvedArgs] = resolve(commands, rawArgs);
+  console.log(cmd, resolvedArgs);
   if (!cmd) cmd = commands[Default];
   // also, resolved command must be a handler
   if (!("handle" in cmd)) return;

@@ -9,10 +9,6 @@ import Preferences from "./Preferences";
 import { NavBar, NavItem } from "./common/Nav";
 import Aliases from "./Aliases";
 
-// TODO: also display
-//       - aliases
-//       all configurable through UI
-
 const App = ({
   commands,
   player,
