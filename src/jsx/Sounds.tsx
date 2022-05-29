@@ -22,7 +22,7 @@ const Sounds = ({ player }: { player: Player }) => {
           <tr key={sound}>
             <td>{sound}</td>
             <td>
-              <Copy text={`${prefix} ${sound}`} />
+              <Copy text={`${prefix}${sound}`} />
             </td>
             <td>
               <Play sound={sound} player={player} />
