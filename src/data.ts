@@ -274,6 +274,23 @@ const $say: Command = {
   example: (p) => `${p}say L_? L_? L_? L_? L_? L_? L_? L_? L_?`,
 };
 
+const _ttsCooldownPreset = (which: "user" | "global") => {
+  const set: Command = {
+    allows: Role.Editor,
+    handle(user, value) {
+      const millis = parseDuration(value);
+      ttsCooldown.update((v) => ({ ...v, [which]: millis }));
+      console.log(`${user.name} set ${which} TTS cooldown to ${value}`);
+    },
+    description: `Set ${which} TTS cooldown to {0}.`,
+    example: (p) => `${p}cooldown set tts ${which} 50s`,
+  };
+  return { set };
+};
+
+const _userTtsCooldownPreset = _ttsCooldownPreset("user");
+const _globalTtsCooldownPreset = _ttsCooldownPreset("global");
+
 // this exists to avoid 2 sets of identical commands, one for `perUser` and the other for `perSound`
 const _cooldownPreset = (which: "user" | "sound") => {
   const field = which === "user" ? "perUser" : "perSound";
@@ -343,6 +360,12 @@ const $cooldown: Command = {
       _: {
         user: _userCooldownPreset.set,
         sound: _soundCooldownPreset.set,
+        tts: {
+          _: {
+            user: _userTtsCooldownPreset.set,
+            global: _globalTtsCooldownPreset.set,
+          },
+        },
       },
     },
     rm: {
