@@ -8,6 +8,7 @@ import Prefix from "./Prefix";
 import Preferences from "./Preferences";
 import { NavBar, NavItem } from "./common/Nav";
 import Aliases from "./Aliases";
+import Roles from "./Roles";
 
 const App = ({
   commands,
@@ -35,6 +36,9 @@ const App = ({
           <NavItem label="Settings">
             <Prefix />
             <Preferences />
+          </NavItem>
+          <NavItem label="Roles">
+            <Roles />
           </NavItem>
         </NavBar>
       </>
