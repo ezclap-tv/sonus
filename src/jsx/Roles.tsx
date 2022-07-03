@@ -70,7 +70,24 @@ const Aliases = () => {
         {Object.entries(users).map(([name, user]) => (
           <tr key={name}>
             <td>{name}</td>
-            <td>{Role[user.role]}</td>
+            <td>
+              <select
+                ref={roleSelectRef}
+                value={Role[user.role]}
+                onChange={({ target }) =>
+                  setUser(
+                    name,
+                    (Role as any)[(target as HTMLSelectElement).value],
+                  )
+                }
+              >
+                {Object.keys(Role)
+                  .filter((k) => isNaN(+k))
+                  .map((cmd) => (
+                    <option value={cmd}>{cmd}</option>
+                  ))}
+              </select>
+            </td>
             <td>
               <button onClick={() => deleteUser(name)}>❌</button>
             </td>
